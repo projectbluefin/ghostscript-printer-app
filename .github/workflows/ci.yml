@@ -19,15 +19,16 @@ jobs:
       matrix:
         include:
           - arch: x86_64
-            runner: ubuntu-24.04
+            runner: ubuntu-26.04
           - arch: aarch64
-            runner: ubuntu-24.04-arm
+            runner: ubuntu-26.04-arm
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 360
     permissions:
       contents: read
     env:
       FULL_BUILD: ${{ github.event_name != 'pull_request' }}
+      CACHE_PREFIX: bst-v1-${{ matrix.arch }}-
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -40,16 +41,34 @@ jobs:
       - name: Validate BuildStream graph
         if: env.FULL_BUILD != 'true'
         run: just validate
+      - name: Compute BuildStream cache key
+        id: cache-key
+        if: env.FULL_BUILD == 'true'
+        env:
+          INPUTS_HASH: ${{ hashFiles('project.conf', 'elements/**', 'include/**', 'patches/**', 'files/**', 'Makefile', 'ghostscript-printer-app.c', 'ghostscript-printer-app.1', 'ghostscript-printer-app.service', 'testpage.ps', 'VERSION') }}
+        run: echo "inputs=${CACHE_PREFIX}${INPUTS_HASH}-" >> "$GITHUB_OUTPUT"
+      - name: Restore BuildStream cache
+        if: env.FULL_BUILD == 'true'
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cache/buildstream/cas
+            ~/.cache/buildstream/artifacts
+            ~/.cache/buildstream/source_protos
+          key: ${{ steps.cache-key.outputs.inputs }}${{ github.run_id }}
+          restore-keys: |
+            ${{ steps.cache-key.outputs.inputs }}
+            ${{ env.CACHE_PREFIX }}
       - name: Build image
         if: env.FULL_BUILD == 'true'
-        run: just bst --network-retries 5 build oci/ghostscript-printer-app.bst
+        run: just bst --config /src/ci/buildstream.conf --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Build and verify FSDK appliance
         if: env.FULL_BUILD == 'true'
         run: just verify
 
   build-snap:
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     permissions:
       contents: read
     steps:

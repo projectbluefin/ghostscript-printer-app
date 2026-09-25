@@ -405,6 +405,11 @@ For real hardware, follow the separate
 [USB and network printer validation procedure](docs/oci-physical-validation.md).
 Synthetic CI results are not physical-printer evidence.
 
+Merge-queue CI restores BuildStream's local cache (`cas`, `artifacts`,
+`source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
+rebuilds and saves it per architecture on `testing` pushes and nightly, saving an arch only when it fits in
+4.5 GB; reset it with `gh cache delete --all`.
+
 ### Releases
 
 Maintainers publish by pushing a Git tag exactly matching `v$(cat VERSION)`.
