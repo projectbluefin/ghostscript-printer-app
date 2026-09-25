@@ -1,8 +1,8 @@
 # Triage Labels
 
-The skills speak in terms of five canonical triage roles. This repository uses those role names unchanged as its issue labels.
+The skills speak in terms of five canonical triage roles. Use those role names unchanged as issue labels on `projectbluefin/ghostscript-printer-app` GitHub Issues.
 
-| Label in mattpocock/skills | Label in our tracker | Meaning                                  |
+| Label in mattpocock/skills | GitHub issue label | Meaning                                  |
 | -------------------------- | -------------------- | ---------------------------------------- |
 | `needs-triage`             | `needs-triage`       | Maintainer needs to evaluate this issue  |
 | `needs-info`               | `needs-info`         | Waiting on reporter for more information |

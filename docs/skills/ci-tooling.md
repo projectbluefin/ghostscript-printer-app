@@ -11,13 +11,13 @@ metadata:
 
 ## When to Use
 
-- Changing `.github/workflows/ci.yml`, `bst-cache.yml`, `registry-actions.yml`, or `update-base.yml`.
+- Changing `.github/workflows/ci.yml`, `bst-cache.yml`, `promote-stable.yml`, `registry-actions.yml`, or `update-base.yml`.
 - Changing `VERSION`, FSDK release metadata, GHCR tags, SBOM attachment, signing, or provenance.
 
 ## When NOT to Use
 
 - Local BuildStream element work that does not change CI or release behavior.
-- Snap packaging internals outside workflow triggers and permissions.
+- Non-OCI packaging outside the container release lane.
 
 ## Core Process
 
@@ -28,7 +28,7 @@ metadata:
 5. Add version, revision, creation time, license, source URL, FSDK version, and FSDK ref to every architecture image config and to the multi-architecture index.
 6. Generate one BuildStream-native SPDX JSON document for the complete dependency graph, attach it to the index, keyless-sign the index and SBOM artifact, publish GitHub provenance with `actions/attest`, then verify all three forms of evidence.
 7. Run dependency tracking with only `contents: read`; `update-base.yml` tracks `elements/fsdk-containers.bst` (FSDK and the shared printing base) and proposes `deps/fsdk-containers` against `testing`, where the merge queue runs the full build and `just verify`. Mint the short-lived Mergeraptor installation token afterward, expose it only to the proposal step, and push one atomic update branch without auto-merge. GitHub App-authored pushes trigger pull-request CI; do not add a redundant dispatch.
-8. Keep the Snap update/build lanes independent from FSDK OCI publication.
+8. Keep OCI verification on `testing` and `stable`; obsolete upstream package automation must not write `stable` or gate a container-only release.
 9. Give every external BuildStream source a project alias. Prefer an authoritative, checksummed release archive over a personal Git mirror when upstream Git is unreliable.
 10. Give pull-request CI a PR-scoped concurrency group with `cancel-in-progress: true`; stacked force-pushes must not leave duplicate multi-hour architecture jobs consuming the runner pool.
 11. Attribute App-authored commits with the bot account's numeric GitHub user ID in its noreply address. The GitHub App ID is a different identifier and does not link commits to the bot account.

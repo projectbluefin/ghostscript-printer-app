@@ -1,21 +1,17 @@
-# Issue tracker: Local Markdown
+# Issue tracker: GitHub Issues
 
-Issues and specs for this repo live as Markdown files in `.scratch/` because GitHub Issues are disabled on `projectbluefin/ghostscript-printer-app`.
+Use [projectbluefin/ghostscript-printer-app Issues](https://github.com/projectbluefin/ghostscript-printer-app/issues) for Bluefin OCI bugs, specs/PRDs, and implementation work. GitHub Issues are enabled on this fork. The `upstream` remote points to OpenPrinting; do not file Bluefin OCI issues there. Historical `.scratch/` notes are not the active issue tracker.
 
 ## Conventions
 
-- One feature per directory: `.scratch/<feature-slug>/`
-- The spec is `.scratch/<feature-slug>/spec.md`
-- Implementation issues are one file per ticket at `.scratch/<feature-slug>/issues/<NN>-<slug>.md`, numbered from `01` in dependency order.
-- Triage state is recorded as a `Status:` line near the top of each issue file.
-- Comments and conversation history append under a `## Comments` heading.
+- Keep each spec/PRD and actionable work item in a GitHub issue; link dependent issues rather than duplicating their content.
+- Use the canonical triage labels in `docs/agents/triage-labels.md` and record prerequisites in the issue body or comments.
+- Discuss progress and decisions in the issue comments; close with the outcome when resolved.
 
 ## Skill operations
 
-- **Publish a spec:** create `.scratch/<feature-slug>/spec.md`.
-- **Fetch a ticket:** read the referenced file under `.scratch/<feature-slug>/issues/`.
-- **Block:** list every prerequisite in the ticket's `Blocked by:` field.
-- **Claim:** set `Status: claimed` before implementation.
-- **Resolve:** set `Status: resolved` and append the outcome under `## Answer`.
-
-Do not infer a GitHub target from this clone: its `upstream` remote is marked as the default GitHub repository. GitHub Issues must not be used unless the repository enables them and this configuration is deliberately changed.
+- **Publish a spec:** create an issue with the scope, acceptance criteria, and linked work items.
+- **Fetch a ticket:** read the issue body and comments from this fork.
+- **Block:** link all prerequisite issues and apply `needs-info` if reporter input is needed.
+- **Claim:** assign the issue to the implementer when permitted and note the claim in a comment.
+- **Resolve:** close the issue with a comment summarizing the outcome.

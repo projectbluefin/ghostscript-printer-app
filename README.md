@@ -27,8 +27,7 @@ printer](http://www.openprinting.org/printers/), [by
 driver](http://www.openprinting.org/drivers/),
 [Downlod](http://github.com/OpenPrinting/foomatic-db)) is used.
 
-Your contributions are welcome. Please post [issues and pull
-requests](https://github.com/OpenPrinting/ghostscript-printer-app).
+For the Bluefin OCI appliance, report [issues](https://github.com/projectbluefin/ghostscript-printer-app/issues) and propose changes to the `testing` branch of [the Bluefin fork](https://github.com/projectbluefin/ghostscript-printer-app). For upstream application and Snap changes, use [OpenPrinting](https://github.com/OpenPrinting/ghostscript-printer-app).
 
 
 ### Contained Printer Drivers
@@ -417,13 +416,21 @@ Merge-queue CI restores BuildStream's local cache (`cas`, `artifacts`,
 `source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
 rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache fails the refill); reset it with `gh cache delete --all`.
 
-### Releases
+### Development and releases
 
-Maintainers publish by pushing a Git tag exactly matching `v$(cat VERSION)`.
-The tag workflow builds and verifies native amd64 and arm64 images, publishes
-the matching immutable GHCR multi-architecture index, and verifies its SPDX
-SBOM, keyless signatures, GitHub provenance, and OCI metadata. It never
-publishes a mutable channel alias.
+Open OCI development PRs against `testing`; `update-base.yml` proposes its daily
+fsdk-containers bumps there too. Pull requests run `just validate`, and the merge
+queue runs the full native amd64 and arm64 build and `just verify` before a change
+lands on `testing`. Use the manually dispatched `promote-stable.yml` workflow with the exact current
+`testing` commit; it rebuilds and verifies both native architectures before
+fast-forwarding `stable`. Retain `main` only while existing feature branches or
+workflows still reference it.
+
+Only a tag on `stable` exactly matching `v$(cat VERSION)` can publish an OCI
+release. The release workflow builds and verifies native amd64 and arm64 images,
+publishes the matching immutable GHCR multi-architecture index, and verifies
+its SPDX SBOM, keyless signatures, GitHub provenance, and OCI metadata. It
+never publishes a mutable channel alias.
 
 ## BUILDING WITHOUT PACKAGING OR INSTALLATION
 
