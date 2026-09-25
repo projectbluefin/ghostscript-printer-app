@@ -8,7 +8,7 @@ sources:
     ref: debian/0.0.9-11-0-g9a1fae0987e757c8d04e728eaec6e7adc1efca89
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
 
 config:
   build-commands:

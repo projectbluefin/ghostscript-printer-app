@@ -12,15 +12,15 @@ sources:
 build-depends:
   - printer-app/perl-clone.bst
   - printer-app/perl-xml-libxml.bst
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
-  - freedesktop-sdk.bst:components/cups-filters.bst
-  - freedesktop-sdk.bst:components/curl.bst
-  - freedesktop-sdk.bst:components/file.bst
-  - freedesktop-sdk.bst:components/foomatic-db.bst
-  - freedesktop-sdk.bst:components/ghostscript.bst
-  - freedesktop-sdk.bst:components/gzip.bst
-  - freedesktop-sdk.bst:components/perl.bst
-  - freedesktop-sdk.bst:components/perl-xml-parser.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/curl.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/file.bst
+  - fsdk-containers.bst:printing/foomatic-db.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/gzip.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/perl.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/perl-xml-parser.bst
 
 config:
   build-commands:

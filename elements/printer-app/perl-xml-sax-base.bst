@@ -2,10 +2,10 @@ kind: makemaker
 description: Build XML::SAX::Base for Foomatic XML parsing.
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 depends:
-  - freedesktop-sdk.bst:components/perl.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/perl.bst
 
 sources:
   - kind: cpan

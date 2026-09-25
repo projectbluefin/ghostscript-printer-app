@@ -401,14 +401,21 @@ starts the real image, exercises every driver slice, verifies lifecycle and
 persistence behavior, audits the advertised payload and complete ELF closure,
 and enforces the uncompressed size ceiling.
 
+CUPS, cups-filters, libcupsfilters, libppd, Ghostscript, mutool, Avahi, PAPPL
+and pappl-retrofit come from the shared printing base of
+[fsdk-containers](https://github.com/projectbluefin/fsdk-containers)
+(`fsdk-containers.bst:printing/base.bst`), junctioned at a pinned commit in
+`elements/fsdk-containers.bst`; FSDK itself comes through that junction. CI
+seeds the base from its cosign-verified `printing-base-devel` bundle, and
+`update-base.yml` proposes junction bumps daily.
+
 For real hardware, follow the separate
 [USB and network printer validation procedure](docs/oci-physical-validation.md).
 Synthetic CI results are not physical-printer evidence.
 
 Merge-queue CI restores BuildStream's local cache (`cas`, `artifacts`,
 `source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
-rebuilds and saves it per architecture on `testing` pushes and nightly, saving an arch only when it fits in
-4.5 GB; reset it with `gh cache delete --all`.
+rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache fails the refill); reset it with `gh cache delete --all`.
 
 ### Releases
 

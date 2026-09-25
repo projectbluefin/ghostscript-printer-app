@@ -31,15 +31,21 @@ print(" ".join(match.group(1).replace(",", " ").split()))
 PY
 )"
 
-read -r fsdk_version fsdk_ref < <(python3 - <<'PY'
-import pathlib
+# FSDK is pinned by fsdk-containers' own junction; read it from the resolved graph.
+fsdk_source_info="$(just bst show --deps none --format '%{source-info}' fsdk-containers.bst:freedesktop-sdk.bst)"
+read -r fsdk_version fsdk_ref < <(FSDK_SOURCE_INFO="$fsdk_source_info" python3 - <<'PY'
+import os
 import re
 
-junction = pathlib.Path("elements/freedesktop-sdk.bst").read_text()
-match = re.search(r"ref: freedesktop-sdk-(.+?)-0-g([0-9a-f]{40})$", junction, re.MULTILINE)
+match = re.search(
+    r"^- kind: git_repo\n  url: https://gitlab\.com/freedesktop-sdk/freedesktop-sdk\.git\n"
+    r"(?:  .*\n)*?  version: ([0-9a-f]{40})\n(?:  .*\n)*?    tag-name: freedesktop-sdk-(\S+)\n    commit-offset: 0$",
+    os.environ["FSDK_SOURCE_INFO"],
+    re.MULTILINE,
+)
 if match is None:
     raise SystemExit("FAIL: pinned freedesktop-sdk release is missing")
-print(*match.groups())
+print(match.group(2), match.group(1))
 PY
 )
 

@@ -46,26 +46,26 @@ require_runtime_deps() {
 }
 
 require_runtime_deps hpijs \
-  freedesktop-sdk.bst:components/jpeg.bst \
-  freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
+  fsdk-containers.bst:freedesktop-sdk.bst:components/jpeg.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
 require_runtime_deps foo2zjs \
   printer-app/jbigkit.bst \
   printer-app/psutils.bst \
-  freedesktop-sdk.bst:components/bc.bst \
-  freedesktop-sdk.bst:components/cups.bst \
-  freedesktop-sdk.bst:components/cups-filters.bst \
-  freedesktop-sdk.bst:components/file.bst \
-  freedesktop-sdk.bst:components/ghostscript.bst \
-  freedesktop-sdk.bst:components/grep.bst \
-  freedesktop-sdk.bst:components/lcms.bst \
-  freedesktop-sdk.bst:components/python3.bst \
-  freedesktop-sdk.bst:components/sed.bst
+  fsdk-containers.bst:freedesktop-sdk.bst:components/bc.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/file.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/grep.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/lcms.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/sed.bst
 require_runtime_deps m2300w \
   printer-app/psutils.bst \
-  freedesktop-sdk.bst:components/cups-filters.bst \
-  freedesktop-sdk.bst:components/ghostscript.bst \
-  freedesktop-sdk.bst:components/python3.bst \
-  freedesktop-sdk.bst:components/sed.bst
+  fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst \
+  fsdk-containers.bst:freedesktop-sdk.bst:components/sed.bst
 chmod 0777 "$state_dir"
 podman run -d --name "$name" --network host -e PORT="$port" \
   -v "$state_dir:/var/lib/ghostscript-printer-app:Z" "$image" >/dev/null

@@ -11,7 +11,7 @@ metadata:
 
 ## When to Use
 
-- Changing `.github/workflows/ci.yml`, `registry-actions.yml`, or `update-fsdk-sources.yml`.
+- Changing `.github/workflows/ci.yml`, `bst-cache.yml`, `registry-actions.yml`, or `update-base.yml`.
 - Changing `VERSION`, FSDK release metadata, GHCR tags, SBOM attachment, signing, or provenance.
 
 ## When NOT to Use
@@ -27,12 +27,14 @@ metadata:
 4. Refuse an existing immutable tag. Proceed only when the authenticated registry response explicitly reports a missing manifest or repository; network and authentication failures are fatal.
 5. Add version, revision, creation time, license, source URL, FSDK version, and FSDK ref to every architecture image config and to the multi-architecture index.
 6. Generate one BuildStream-native SPDX JSON document for the complete dependency graph, attach it to the index, keyless-sign the index and SBOM artifact, publish GitHub provenance with `actions/attest`, then verify all three forms of evidence.
-7. Run dependency tracking and full verification with only `contents: read`. Mint the short-lived Mergeraptor installation token afterward, expose it only to the proposal step, and push one atomic update branch without auto-merge. GitHub App-authored pushes trigger pull-request CI; do not add a redundant dispatch.
+7. Run dependency tracking with only `contents: read`; `update-base.yml` tracks `elements/fsdk-containers.bst` (FSDK and the shared printing base) and proposes `deps/fsdk-containers` against `testing`, where the merge queue runs the full build and `just verify`. Mint the short-lived Mergeraptor installation token afterward, expose it only to the proposal step, and push one atomic update branch without auto-merge. GitHub App-authored pushes trigger pull-request CI; do not add a redundant dispatch.
 8. Keep the Snap update/build lanes independent from FSDK OCI publication.
 9. Give every external BuildStream source a project alias. Prefer an authoritative, checksummed release archive over a personal Git mirror when upstream Git is unreliable.
 10. Give pull-request CI a PR-scoped concurrency group with `cancel-in-progress: true`; stacked force-pushes must not leave duplicate multi-hour architecture jobs consuming the runner pool.
 11. Attribute App-authored commits with the bot account's numeric GitHub user ID in its noreply address. The GitHub App ID is a different identifier and does not link commits to the bot account.
-12. Treat `oras discover --format json` as a referrer-tree response and query its top-level `.referrers[]`; `.manifests[]` belongs to OCI index JSON, not ORAS discovery output.
+12. Seed `fsdk-containers.bst:printing/base.bst` before the merge-queue and cache-refill builds from `ghcr.io/projectbluefin/printing-base-devel:<arch>-<full-key>`, only after `cosign verify` of its digest against fsdk-containers' workflow identity. The seed step never fails the job: any error is a `::warning::` and BuildStream builds the base locally.
+13. When `update-base.yml` moves FSDK, update the `io.projectbluefin.fsdk.*` labels in `elements/oci/ghostscript-printer-app.bst`; `tests/appliance-parity.sh` fails until they match the resolved FSDK pin, and the release workflow publishes them.
+14. Treat `oras discover --format json` as a referrer-tree response and query its top-level `.referrers[]`; `.manifests[]` belongs to OCI index JSON, not ORAS discovery output.
 
 ## Common Rationalizations
 

@@ -9,13 +9,13 @@ sources:
 
 build-depends:
   - printer-app/pyppd.bst
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 depends:
-  - freedesktop-sdk.bst:components/cups.bst
-  - freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
   - printer-app/jbigkit.bst
-  - freedesktop-sdk.bst:components/cups-filters.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
 
 config:
   build-commands:

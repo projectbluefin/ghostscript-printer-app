@@ -11,16 +11,16 @@ sources:
     directory: patches
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
-  - freedesktop-sdk.bst:components/patch.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/patch.bst
 
 depends:
   - printer-app/jbigkit.bst
-  - freedesktop-sdk.bst:components/cups.bst
-  - freedesktop-sdk.bst:components/libcupsfilters.bst
-  - freedesktop-sdk.bst:components/libppd.bst
-  - freedesktop-sdk.bst:components/cups-filters.bst
-  - freedesktop-sdk.bst:components/zlib.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/libcupsfilters.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/libppd.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/zlib.bst
 
 config:
   build-commands:

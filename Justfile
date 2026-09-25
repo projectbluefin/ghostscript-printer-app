@@ -5,6 +5,7 @@ image_ref := "ghcr.io/projectbluefin/ghostscript-printer-app:build"
 default:
     @just --list
 
+# BST_FLAGS adds global bst options, e.g. CI's `--config /src/ci/buildstream.conf`.
 bst *ARGS:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -40,7 +41,7 @@ bst *ARGS:
         -v "${HOME}/.cache/buildstream:/root/.cache/buildstream:rw" \
         -w /src \
         "{{ bst2_image }}" \
-        bash -c 'bst "$@"' -- --no-interactive "${RE_FLAG[@]}" {{ ARGS }}
+        bash -c 'bst "$@"' -- --no-interactive ${BST_FLAGS:-} "${RE_FLAG[@]}" {{ ARGS }}
 
 validate:
     just bst show --deps all oci/ghostscript-printer-app.bst
@@ -93,6 +94,22 @@ verify-stateful-drivers:
 verify-cups-patch-chain:
     tests/cups-patch-chain.sh
 
+# fsdk-containers printing-base contract rule 5: the image composes runtime
+# domains only, so no headers, static/libtool archives, pkg-config or CMake
+# files may reach it (license texts are exempt). Run after an image build (`just build`).
+verify-no-devel:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    IMAGE="{{ image_ref }}"
+    root="$(mktemp -d)"
+    ctr="$(podman create "${IMAGE}" /none)"
+    trap 'podman rm "${ctr}" >/dev/null; chmod -R u+rwX "${root}"; rm -rf "${root}"' EXIT
+    podman export "${ctr}" | tar -C "${root}" -xf -
+    bad="$(cd "${root}" && find . -path ./usr/share/licenses -prune -o \( -path ./usr/include -o -name '*.a' -o -name '*.la' \
+          -o -type d -name pkgconfig -o -type d -name cmake \) -print -quit)"
+    [ -z "${bad}" ] || { echo "devel content in ${IMAGE}: ${bad}" >&2; exit 1; }
+    echo "OK: no devel content in ${IMAGE}"
+
 verify:
     just validate
     just verify-cups-patch-chain
@@ -102,6 +119,7 @@ verify:
     just verify-packaged-drivers
     just verify-stateful-drivers
     tests/appliance-parity.sh
+    just verify-no-devel
 
 
 sbom:

@@ -39,8 +39,11 @@ jobs:
             printf 'Tag %s does not match application version v%s\n' "$GITHUB_REF_NAME" "$version" >&2
             exit 1
           fi
-          ref_line="$(sed -n 's/^[[:space:]]*ref: freedesktop-sdk-\(.*\)-0-g\([0-9a-f]\{40\}\)$/\1 \2/p' elements/freedesktop-sdk.bst)"
-          read -r fsdk_version fsdk_ref <<< "$ref_line"
+          # FSDK comes through fsdk-containers; the image labels record its pin
+          # and tests/appliance-parity.sh checks them against the resolved graph.
+          label() { sed -n "s/^[[:space:]]*'io\.projectbluefin\.fsdk\.$1': '\(.*\)'$/\1/p" elements/oci/ghostscript-printer-app.bst; }
+          fsdk_version="$(label version)"
+          fsdk_ref="$(label ref)"
           test -n "$fsdk_version"
           test -n "$fsdk_ref"
           {
@@ -68,6 +71,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    env:
+      BST_FLAGS: --config /src/ci/buildstream.conf
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

@@ -7,7 +7,7 @@ sources:
     ref: de7106b6bfaf495d6865c7dd7ac6ca1381bd12e0d81405ea81e7f2167263d932
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 public:
   bst:

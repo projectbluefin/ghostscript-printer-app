@@ -8,13 +8,13 @@ sources:
     ref: debian/3.26.4+dfsg0-3-0-gf27f786d5f1060cce7c92e42488bd5e5d00ba135
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
-  - freedesktop-sdk.bst:components/python3.bst
-  - freedesktop-sdk.bst:components/sed.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/sed.bst
 
 depends:
-  - freedesktop-sdk.bst:components/jpeg.bst
-  - freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/jpeg.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
 
 config:
   build-commands:

@@ -10,7 +10,7 @@ sources:
     path: patches/c2050
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 config:
   build-commands:

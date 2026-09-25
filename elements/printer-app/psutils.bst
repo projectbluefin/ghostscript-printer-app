@@ -8,7 +8,7 @@ sources:
     ref: debian/1.17.dfsg-5-0-gafa3fccb4b77165a22b783f21feac35a082d8137
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 config:
   build-commands:

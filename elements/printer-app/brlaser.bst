@@ -8,12 +8,12 @@ sources:
     ref: v6-0-g23117fe9e0266396e4791cdae84d979928aed135
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-cmake.bst
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-cmake.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 depends:
-  - freedesktop-sdk.bst:components/cups.bst
-  - freedesktop-sdk.bst:components/cups-filters.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
 
 config:
   build-commands:

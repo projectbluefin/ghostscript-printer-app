@@ -21,17 +21,11 @@ depends:
   - printer-app/foo2zjs.bst
   - printer-app/hpijs.bst
   - printer-app/m2300w.bst
-  - freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
-  - freedesktop-sdk.bst:components/avahi.bst
-  - freedesktop-sdk.bst:components/ca-certificates.bst
-  - freedesktop-sdk.bst:components/catatonit.bst
-  - freedesktop-sdk.bst:components/cups-daemon-only.bst
-  - freedesktop-sdk.bst:components/cups-filters.bst
-  - freedesktop-sdk.bst:components/dbus.bst
-  - freedesktop-sdk.bst:components/ghostscript.bst
-  - freedesktop-sdk.bst:components/libcupsfilters.bst
-  - freedesktop-sdk.bst:components/libppd.bst
-  - freedesktop-sdk.bst:components/mutool.bst
-  - freedesktop-sdk.bst:components/python3.bst
-  - freedesktop-sdk.bst:components/xz.bst
-  - freedesktop-sdk.bst:components/tzdata.bst
+  - fsdk-containers.bst:printing/base.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/ca-certificates.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/catatonit.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/dbus.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/xz.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/tzdata.bst

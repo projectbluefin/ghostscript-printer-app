@@ -9,10 +9,10 @@ sources:
 
 build-depends:
   - printer-app/pyppd.bst
-  - freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
 
 depends:
-  - freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
 
 config:
   build-commands:

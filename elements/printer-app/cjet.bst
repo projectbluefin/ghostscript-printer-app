@@ -8,8 +8,8 @@ sources:
     ref: debian/0.8.9-11-0-g2de422f1b08cdf8d18a2e2ea8ae0b14751702fba
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
-  - freedesktop-sdk.bst:components/patch.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/patch.bst
 
 config:
   build-commands:

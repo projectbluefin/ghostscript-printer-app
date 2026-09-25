@@ -2,10 +2,10 @@ kind: makemaker
 description: Build the Perl Clone module used by Foomatic.
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
 depends:
-  - freedesktop-sdk.bst:components/perl.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/perl.bst
 
 sources:
   - kind: cpan

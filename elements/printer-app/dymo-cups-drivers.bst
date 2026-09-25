@@ -9,11 +9,11 @@ sources:
 
 build-depends:
   - printer-app/pyppd.bst
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
 
 depends:
-  - freedesktop-sdk.bst:components/cups.bst
-  - freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
 
 config:
   build-commands:

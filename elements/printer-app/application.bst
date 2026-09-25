@@ -16,11 +16,11 @@ sources:
     path: VERSION
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
 
 depends:
-  - printer-app/pappl-retrofit.bst
-  - freedesktop-sdk.bst:components/ghostscript.bst
+  - fsdk-containers.bst:printing/pappl-retrofit.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
 
 config:
   build-commands:

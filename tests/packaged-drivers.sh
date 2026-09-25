@@ -24,27 +24,27 @@ for element in \
   rastertosag-gdi \
   splix; do
   runtime_graph="$(just bst show --deps run --format '%{name}' "printer-app/$element.bst")"
-  [[ "$runtime_graph" == *"freedesktop-sdk.bst:components/python3.bst"* ]]
+  [[ "$runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst"* ]]
 done
 oki_runtime_graph="$(just bst show --deps run --format '%{name}' printer-app/printer-driver-oki.bst)"
-[[ "$oki_runtime_graph" == *"freedesktop-sdk.bst:components/grep.bst"* ]]
-[[ "$oki_runtime_graph" == *"freedesktop-sdk.bst:components/sed.bst"* ]]
+[[ "$oki_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/grep.bst"* ]]
+[[ "$oki_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/sed.bst"* ]]
 for element in fxlinuxprint ptouch-driver pxljr; do
   runtime_graph="$(just bst show --deps run --format '%{name}' "printer-app/$element.bst")"
-  [[ "$runtime_graph" == *"freedesktop-sdk.bst:components/ghostscript.bst"* ]]
+  [[ "$runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst"* ]]
 done
 for element in ptouch-driver pxljr; do
   runtime_graph="$(just bst show --deps run --format '%{name}' "printer-app/$element.bst")"
-  [[ "$runtime_graph" == *"freedesktop-sdk.bst:components/cups-filters.bst"* ]]
+  [[ "$runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst"* ]]
 done
-[[ "$oki_runtime_graph" == *"freedesktop-sdk.bst:public-stacks/runtime-gnu.bst"* ]]
-[[ "$oki_runtime_graph" == *"freedesktop-sdk.bst:components/cups-filters.bst"* ]]
-[[ "$oki_runtime_graph" == *"freedesktop-sdk.bst:components/cups-daemon-only.bst"* ]]
+[[ "$oki_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst"* ]]
+[[ "$oki_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst"* ]]
+[[ "$oki_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/cups-daemon-only.bst"* ]]
 c2esp_runtime_graph="$(just bst show --deps run --format '%{name}' printer-app/c2esp.bst)"
-[[ "$c2esp_runtime_graph" == *"freedesktop-sdk.bst:components/zlib.bst"* ]]
+[[ "$c2esp_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/zlib.bst"* ]]
 splix_runtime_graph="$(just bst show --deps run --format '%{name}' printer-app/splix.bst)"
 [[ "$splix_runtime_graph" == *"printer-app/jbigkit.bst"* ]]
-[[ "$splix_runtime_graph" == *"freedesktop-sdk.bst:components/cups-filters.bst"* ]]
+[[ "$splix_runtime_graph" == *"fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst"* ]]
 
 chmod 0777 "$state_dir"
 podman run --rm --entrypoint /usr/bin/bash \

@@ -8,7 +8,7 @@ sources:
     ref: ghostpdl-10.07.1-0-g9a39d68ca934f8e9343f46a2803e765122a3b4a9
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
 
 public:
   bst:

@@ -9,16 +9,16 @@ sources:
 
 build-depends:
   - printer-app/pyppd.bst
-  - freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
-  - freedesktop-sdk.bst:components/perl.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/perl.bst
 
 depends:
-  - freedesktop-sdk.bst:components/cups.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst
   - printer-app/ijs.bst
-  - freedesktop-sdk.bst:components/jpeg.bst
-  - freedesktop-sdk.bst:components/python3.bst
-  - freedesktop-sdk.bst:components/cups-filters.bst
-  - freedesktop-sdk.bst:components/ghostscript.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/jpeg.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
 
 config:
   build-commands:

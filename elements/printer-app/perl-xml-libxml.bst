@@ -2,14 +2,14 @@ kind: makemaker
 description: Build XML::LibXML against FSDK libxml2 for Foomatic.
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
-  - freedesktop-sdk.bst:components/pkg-config.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/pkg-config.bst
 
 depends:
   - printer-app/perl-xml-namespace-support.bst
   - printer-app/perl-xml-sax.bst
-  - freedesktop-sdk.bst:components/libxml2.bst
-  - freedesktop-sdk.bst:components/perl.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/libxml2.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/perl.bst
 
 sources:
   - kind: cpan

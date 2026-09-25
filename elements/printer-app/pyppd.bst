@@ -8,11 +8,11 @@ sources:
     ref: release-1-1-0-0-g29ccf6cf85781315a696774e7458a2f1f61aac57
 
 build-depends:
-  - freedesktop-sdk.bst:public-stacks/buildsystem-python-setuptools.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-python-setuptools.bst
 
 depends:
-  - freedesktop-sdk.bst:components/python3.bst
-  - freedesktop-sdk.bst:components/xz.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
+  - fsdk-containers.bst:freedesktop-sdk.bst:components/xz.bst
 
 config:
   build-commands:
