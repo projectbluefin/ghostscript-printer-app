@@ -77,8 +77,8 @@ jobs:
           tool: just
       - name: Install host dependencies
         run: sudo apt-get update && sudo apt-get install --yes fuse3 podman skopeo
-      - name: Fetch sources with retries
-        run: just fetch
+      - name: Build image
+        run: just bst --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Build and verify FSDK appliance
         run: just verify
       - name: Add release config labels

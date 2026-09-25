@@ -1,9 +1,8 @@
 name: CI
 
 on:
-  push:
-    branches: [main]
   pull_request: {}
+  merge_group:
   workflow_dispatch:
 concurrency:
   group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
@@ -27,6 +26,8 @@ jobs:
     timeout-minutes: 360
     permissions:
       contents: read
+    env:
+      FULL_BUILD: ${{ github.event_name != 'pull_request' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -36,12 +37,18 @@ jobs:
           tool: just
       - name: Install host dependencies
         run: sudo apt-get update && sudo apt-get install --yes fuse3 podman
-      - name: Fetch sources with retries
-        run: just fetch
+      - name: Validate BuildStream graph
+        if: env.FULL_BUILD != 'true'
+        run: just validate
+      - name: Build image
+        if: env.FULL_BUILD == 'true'
+        run: just bst --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Build and verify FSDK appliance
+        if: env.FULL_BUILD == 'true'
         run: just verify
 
   build-snap:
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read

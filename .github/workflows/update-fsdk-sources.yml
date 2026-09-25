@@ -38,9 +38,9 @@ jobs:
       - name: Verify CUPS patch compatibility
         if: steps.changes.outputs.changed == 'true'
         run: just verify-cups-patch-chain
-      - name: Fetch updated sources with retries
+      - name: Build updated image
         if: steps.changes.outputs.changed == 'true'
-        run: just fetch
+        run: just bst --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Verify updated appliance
         if: steps.changes.outputs.changed == 'true'
         run: just verify
