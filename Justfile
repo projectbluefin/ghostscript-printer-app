@@ -115,6 +115,9 @@ verify-no-devel:
     [ -z "${bad}" ] || { echo "devel content in ${IMAGE}: ${bad}" >&2; exit 1; }
     echo "OK: no devel content in ${IMAGE}"
 
+verify-discovery:
+    tests/discovery-no-competition.sh
+
 verify:
     just validate
     just verify-cups-patch-chain
@@ -123,6 +126,7 @@ verify:
     just verify-raster-drivers
     just verify-packaged-drivers
     just verify-stateful-drivers
+    just verify-discovery
     tests/appliance-parity.sh
     just verify-no-devel
 
