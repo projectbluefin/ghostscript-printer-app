@@ -1,17 +1,19 @@
 diff --git a/elements/components/_private/cups-base.bst b/elements/components/_private/cups-base.bst
 --- a/elements/components/_private/cups-base.bst
 +++ b/elements/components/_private/cups-base.bst
-@@ -7,7 +7,7 @@ build-depends:
+@@ -7,7 +7,8 @@ build-depends:
  - public-stacks/buildsystem-autotools.bst
  - components/avahi-libs.bst
  - components/gzip.bst
 -- components/openssl.bst
 +- components/gnutls.bst
++- components/libusb.bst
  - components/systemd.bst
  
  variables:
-@@ -19,7 +19,7 @@ variables:
+@@ -19,7 +20,8 @@ variables:
      --enable-debug
++    --enable-libusb
      --with-components=all
      --with-dbusdir=/etc/dbus-1
 -    --with-tls=openssl
@@ -19,7 +21,7 @@ diff --git a/elements/components/_private/cups-base.bst b/elements/components/_p
      --with-cups-group=lp
      --with-pkgconfpath="%{libdir}/pkgconfig"
      --with-system-groups="root wheel"
-@@ -78,6 +78,8 @@ sources:
+@@ -78,6 +80,8 @@ sources:
    - "*rc*"
    - "*op*"
    ref: v2.4.19-0-g6ba0487abb05afc93d639f37676add8fd65d3756
@@ -31,12 +33,13 @@ diff --git a/elements/components/_private/cups-base.bst b/elements/components/_p
 diff --git a/elements/components/cups.bst b/elements/components/cups.bst
 --- a/elements/components/cups.bst
 +++ b/elements/components/cups.bst
-@@ -9,7 +9,7 @@ build-depends:
+@@ -9,7 +9,8 @@ build-depends:
  runtime-depends:
  - components/avahi-libs.bst
  - components/cups-manifest.bst
 -- components/openssl.bst
 +- components/gnutls.bst
++- components/libusb.bst
  
  config:
    include:

@@ -33,6 +33,7 @@ config:
       install -d -m 0777 \
         /layer/var/lib/ghostscript-printer-app \
         /layer/var/lib/ghostscript-printer-app/ppd \
+        /layer/var/lib/ghostscript-printer-app/usb \
         /layer/var/spool/ghostscript-printer-app
       if [ -f /layer/usr/share/dbus-1/system.conf ]; then
         sed -i '/<user>messagebus<\/user>/d; s/<policy user="root">/<policy user="nonroot">/g' /layer/usr/share/dbus-1/system.conf

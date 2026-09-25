@@ -31,6 +31,7 @@ depends:
   - freedesktop-sdk.bst:components/ghostscript.bst
   - freedesktop-sdk.bst:components/libcupsfilters.bst
   - freedesktop-sdk.bst:components/libppd.bst
+  - freedesktop-sdk.bst:components/libusb.bst
   - freedesktop-sdk.bst:components/mutool.bst
   - freedesktop-sdk.bst:components/python3.bst
   - freedesktop-sdk.bst:components/xz.bst

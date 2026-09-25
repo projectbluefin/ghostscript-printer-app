@@ -57,7 +57,10 @@ test -d "$state_dir/ppd"
 test -d "$state_dir/spool"
 test -d "$state_dir/cups/ssl"
 test -s "$state_dir/cups/snmp.conf"
+test -d "$state_dir/usb"
+test -s "$state_dir/usb/org.cups.usb-quirks"
 podman exec "$name" /usr/bin/bash -c 'printf "%s\n" "# preserved" > /var/lib/ghostscript-printer-app/cups/snmp.conf'
+podman exec "$name" /usr/bin/bash -c 'printf "%s\n" "# preserved" >> /var/lib/ghostscript-printer-app/usb/org.cups.usb-quirks'
 podman stop --time 15 "$name" >/dev/null
 read -r running exit_status <<< "$(podman inspect "$name" --format '{{.State.Running}} {{.State.ExitCode}}')"
 if [[ "$running" != false || "$exit_status" -ne 143 ]]; then
@@ -75,6 +78,7 @@ podman run -d \
 
 wait_for_http "$failure_port"
 podman exec "$failure_name" /usr/bin/bash -c 'test "$(< /var/lib/ghostscript-printer-app/cups/snmp.conf)" = "# preserved"'
+podman exec "$failure_name" /usr/bin/bash -c 'grep -q "^# preserved$" /var/lib/ghostscript-printer-app/usb/org.cups.usb-quirks'
 podman exec "$failure_name" /usr/bin/bash -c '
   for proc in /proc/[0-9]*; do
     read -r comm < "$proc/comm" || continue

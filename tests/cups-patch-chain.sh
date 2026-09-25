@@ -23,6 +23,12 @@ cups_public="$(just bst show --deps none --format '%{public}' "$cups_base_target
 grep -q 'cups-libs' <<<"$cups_public"
 grep -q 'cups-license' <<<"$cups_public"
 
+cups_build_deps="$(just bst show --deps build --format '%{name}' "$cups_base_target")"
+if ! grep -q 'components/libusb\.bst' <<<"$cups_build_deps"; then
+  printf 'FAIL: expected CUPS base to build-depend on libusb\n' >&2
+  exit 1
+fi
+
 rm -rf "$source_dir"
 just bst source checkout --force --directory "$source_dir" "$cups_base_target"
 cups_source="$source_dir/freedesktop-sdk/components-_private-cups-base"

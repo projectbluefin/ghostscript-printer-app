@@ -76,6 +76,9 @@ podman run --rm --user 0:0 --entrypoint /usr/bin/bash \
   for backend in "${backends[@]}"; do
     test -x "/usr/lib/cups/backend/$backend" || { printf "FAIL: missing CUPS backend %s\n" "$backend" >&2; exit 1; }
   done
+  test -s "/usr/share/cups/usb/org.cups.usb-quirks" || { printf "FAIL: missing default CUPS USB quirks table\n" >&2; exit 1; }
+  usb_dependencies="$(ldd /usr/lib/cups/backend/usb)"
+  [[ "$usb_dependencies" == *"libusb-1.0"* ]] || { printf "FAIL: CUPS usb backend not linked to libusb\n" >&2; exit 1; }
 
   filters=(
     c2esp c2espC command2esp command2foo2lava-pjl

@@ -19,6 +19,9 @@ if [[ ! -e "$state_dir/hplip/hplip.conf" ]]; then
 fi
 cp -a --update=none /usr/share/ghostscript-printer-app/defaults/foo2zjs/. "$state_dir/foo2zjs/"
 cp -a --update=none /usr/share/ghostscript-printer-app/defaults/m2300w/. "$state_dir/m2300w/"
+if [[ -d /usr/share/cups/usb ]]; then
+  cp -a --update=none /usr/share/cups/usb/. "$state_dir/usb/"
+fi
 
 export BACKEND_DIR=/usr/lib/ghostscript-printer-app/backend
 export CUPS_SERVERBIN=/usr/lib/ghostscript-printer-app
