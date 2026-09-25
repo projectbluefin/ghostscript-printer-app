@@ -435,6 +435,11 @@ publishes the matching immutable GHCR multi-architecture index, and verifies
 its SPDX SBOM, keyless signatures, GitHub provenance, and OCI metadata. It
 never publishes a mutable channel alias.
 
+The release workflow pushes, signs (index and both architecture manifests),
+attests and verifies everything by digest. It creates the `<VERSION>`,
+`<VERSION>-x86_64` and `<VERSION>-aarch64` tags only after every check passes,
+so a failed release leaves no tagged, unsigned image.
+
 ## BUILDING WITHOUT PACKAGING OR INSTALLATION
 
 You can also do a "quick-and-dirty" build without snapping and without
