@@ -1,0 +1,34 @@
+diff --git a/project.conf b/project.conf
+--- a/project.conf
++++ b/project.conf
+@@ -149,11 +149,23 @@ artifacts:
+     retry-limit: 4
+     retry-delay: 500
+     request-timeout: 300
++- url: https://gbm.gnome.org:11003
++  connection-config:
++    keepalive-time: 60
++    retry-limit: 4
++    retry-delay: 500
++    request-timeout: 300
++- url: https://cache.projectbluefin.io:11001
++  connection-config:
++    keepalive-time: 60
++    retry-limit: 4
++    retry-delay: 500
++    request-timeout: 300
+ 
+ source-caches:
+-- url: https://cache.freedesktop-sdk.io:11001
++- url: https://cache.projectbluefin.io:11001
+   connection-config:
+     keepalive-time: 60
+     retry-limit: 4
+     retry-delay: 500
+     request-timeout: 300
++- url: https://gbm.gnome.org:11003
++  connection-config:
++    keepalive-time: 60
+     retry-limit: 4
+     retry-delay: 500
+     request-timeout: 300

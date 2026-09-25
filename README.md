@@ -405,6 +405,29 @@ For real hardware, follow the separate
 [USB and network printer validation procedure](docs/oci-physical-validation.md).
 Synthetic CI results are not physical-printer evidence.
 
+### Source-cache failover and nested FSDK junctions
+
+BuildStream pulls dependencies and sources through Content Addressable Storage
+(CAS) remote servers configured in `project.conf`. The root project and consumer
+printer applications (`gutenprint-printer-app`, `ps-printer-app`, and
+`hplip-printer-app`) configure Project Bluefin (`https://cache.projectbluefin.io:11001`)
+and GNOME Build Meta (`https://gbm.gnome.org:11003`) CAS caches.
+
+For nested Freedesktop SDK (`freedesktop-sdk.bst`) junctions, upstream FSDK
+configures `cache.freedesktop-sdk.io:11001`, which intermittently times out or
+returns `DEADLINE_EXCEEDED` on missing bootstrap blobs (such as `linux-headers`,
+`gcc-stage2`, and `make`). To ensure reliable nested source fetches without
+altering immutable checksums or masking genuine build errors:
+
+1. `patches/freedesktop-sdk/0002-project.conf-Add-Bluefin-and-GNOME-CAS-servers.patch`
+   patches the junction's `project.conf` to add Project Bluefin and GNOME Build Meta
+   CAS endpoints and prioritize them over the failing upstream source cache.
+2. When remote caches miss, BuildStream cleanly falls back to authoritative pinned
+   upstream source mirrors (e.g. kernel Git mirror or GNU archives).
+3. Recipes in `Justfile` (`just fetch`, `just build`) pass
+   `--ignore-project-source-remotes --source-remote https://cache.projectbluefin.io:11001`
+   to enforce reliable source-cache failover during local builds and CI workflows.
+
 ### Releases
 
 Maintainers publish by pushing a Git tag exactly matching `v$(cat VERSION)`.

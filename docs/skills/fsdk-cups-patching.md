@@ -38,6 +38,7 @@ metadata:
 13. Stage component-specific source patches in separate junction directories. `patches/cups-filters/` is injected into FSDK's existing `components/cups-filters.bst`; never mix it with CUPS or libcupsfilters patches.
 14. Keep Ghostscript on its bundled zlib. FSDK's zlib-ng compatibility library corrupts compiled Ghostscript ROMFS reads when a full-size IJS page lazily loads an ICC profile; the failure appears as `free(): invalid size` from `s_block_read_process`. A default Letter pxljr conversion is the regression probe.
 15. Treat filter executables by format: use `ldd` only for ELF binaries, and resolve script shebangs plus every invoked command separately. Generated pyppd archives use `#!/usr/bin/env python3`, so each owning element declares the Python runtime even when another aggregate currently supplies it.
+16. Maintain verified source-cache failover in the FSDK junction. Apply patches in `patches/freedesktop-sdk/` to configure trusted Project Bluefin (`https://cache.projectbluefin.io:11001`) and GNOME Build Meta (`https://gbm.gnome.org:11003`) CAS servers in the junction's `project.conf`. This prevents `DEADLINE_EXCEEDED` hangs on missing FSDK blobs and ensures fallback to authoritative pinned upstream sources.
 
 ## Common Rationalizations
 
