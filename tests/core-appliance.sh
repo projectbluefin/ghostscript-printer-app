@@ -129,6 +129,7 @@ podman exec "$name" /usr/bin/bash -c '
   printf "private job\n" > "$state/spool/permission-probe"
 '
 keys_before="$(podman exec "$name" /usr/bin/bash -c 'sha256sum /var/lib/ghostscript-printer-app/.cups/ssl/*.key')"
+podman exec "$name" /usr/bin/bash -c 'command -v avahi-browse' >/dev/null
 podman exec "$name" /usr/bin/bash -c 'printf "%s\n" "# preserved" > /var/lib/ghostscript-printer-app/cups/snmp.conf'
 podman exec "$name" /usr/bin/bash -c 'printf "%s\n" "# preserved USB quirks" > /var/lib/ghostscript-printer-app/usb/org.cups.usb-quirks'
 podman stop --time 15 "$name" >/dev/null

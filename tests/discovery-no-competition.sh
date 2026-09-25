@@ -61,7 +61,7 @@ count_advertisements() {
   local observer="$1" queue="$2"
   podman exec "$observer" /usr/bin/bash -c '
     set -euo pipefail
-    avahi-browse --parsable --resolve --terminate --ignore-local _ipp._tcp 2>/dev/null \
+    avahi-browse --parsable --resolve --terminate _ipp._tcp 2>/dev/null \
       | awk -F";" -v marker="'"$queue"'" '"'"'$1 == "=" && index($4, marker) { print $4 }'"'"' \
       | sort -u
   '
