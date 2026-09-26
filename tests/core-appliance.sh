@@ -43,7 +43,7 @@ cleanup() {
   local status=$?
   trap - ERR
   ((status == 0)) || dump_diagnostics
-  podman rm -f "$name" "$failure_name" "$invalid_name" "$state_failure_name" >/dev/null 2>&1 || true
+  podman rm --force --ignore "$name" "$failure_name" "$invalid_name" "$state_failure_name" >/dev/null 2>&1 || true
   podman unshare chmod -R u+w "$state_dir" "$empty_state_dir"
   podman unshare rm -rf "$state_dir" "$empty_state_dir"
 }
@@ -193,10 +193,18 @@ wait_for_http "$failure_port"
 wait_for_https "$failure_port"
 check_private_state "$failure_name"
 keys_after="$(podman exec "$failure_name" /usr/bin/bash -c 'sha256sum /var/lib/ghostscript-printer-app/.cups/ssl/*.key')"
-if [[ "$keys_before" != "$keys_after" ]]; then
-  printf 'FAIL: TLS keys changed across restart\nbefore:\n%s\nafter:\n%s\n' "$keys_before" "$keys_after" >&2
-  exit 1
-fi
+# PAPPL keeps one key per server hostname and names itself twice at startup:
+# first the resolver's FQDN, then Avahi's ".local" name once the Avahi client
+# is running. Whether an HTTPS request lands before that switch is timing, so
+# a restart may add the other name's key. Every existing key must survive
+# byte-identical; new keys are covered by check_private_state above.
+while read -r key_line; do
+  if [[ $'\n'"$keys_after"$'\n' != *$'\n'"$key_line"$'\n'* ]]; then
+    printf 'FAIL: TLS key was lost or regenerated across restart: %s\nbefore:\n%s\nafter:\n%s\n' \
+      "$key_line" "$keys_before" "$keys_after" >&2
+    exit 1
+  fi
+done <<< "$keys_before"
 podman exec "$failure_name" /usr/bin/bash -c '
   set -e
   state=/var/lib/ghostscript-printer-app
