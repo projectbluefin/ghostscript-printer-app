@@ -87,7 +87,7 @@ CUPS, cups-filters, libcupsfilters, libppd, Ghostscript, mutool, the nonroot `av
 - [ ] The Snap and FSDK CUPS source versions both accept the canonical patches.
 - [ ] Source fetch succeeds on both native CI runners for the pinned FSDK release before claiming a downstream driver build is verified.
 - [ ] The image has a libusb-linked CUPS USB backend and its nonempty default quirks table; an empty state volume receives the table, and a restart preserves edited quirks.
-- [ ] A multi-KB PDF passes `gstoraster` with the real packaged PPD and emits a CUPS raster header; a real IPP PDF job also reaches the socket sink.
+- [ ] A multi-KB PDF passes `gstoraster` with the real packaged PPD, bounded to the PPD's lowest advertised resolution, and the decoded CUPS raster header reports a real non-empty rendered page (not only a bare sync word). No redundant Foomatic-routed IPP PDF job stands in for this; the direct filter probe plus downstream HPLIP/Gutenprint image jobs cover the behavior.
 - [ ] An HPLIP PPD with default `MediaType=Automatic` prints through Ghostscript, hpcups and the CUPS socket without a media-type rangecheck.
 - [ ] Repository-built libraries install their `.pc` files in FSDK's multiarch pkg-config directory and are discoverable from a dependent element's build sandbox.
 - [ ] The exported image runs with the numeric UID/GID, creates runtime directories, and reaches application readiness.
