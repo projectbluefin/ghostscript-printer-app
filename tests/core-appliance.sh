@@ -6,10 +6,17 @@ name="ghostscript-printer-app-smoke"
 failure_name="ghostscript-printer-app-child-failure"
 invalid_name="ghostscript-printer-app-invalid-port"
 state_failure_name="ghostscript-printer-app-state-failure"
+no_web_name="ghostscript-printer-app-no-web-interface"
+rejected_name="ghostscript-printer-app-rejected-setting"
 port="${PORT:-18000}"
 failure_port="$((port + 1))"
+no_web_port="$((port + 2))"
+no_web_sink_port="$((no_web_port + 1000))"
+no_web_output="$(mktemp)"
+no_web_sink_pid=""
 state_dir="$(mktemp -d)"
 empty_state_dir="$(mktemp -d)"
+no_web_state_dir="$(mktemp -d)"
 
 # On any failure, name the failing command and dump the appliance state so a
 # CI failure explains itself. Subshells inherit the ERR trap (-E); only the top
@@ -24,7 +31,7 @@ dump_diagnostics() {
   local container
   printf 'FAIL: %s\n' "${failed_command:-explicit exit}" >&2
   podman ps -a >&2 || true
-  for container in "$name" "$failure_name" "$invalid_name" "$state_failure_name"; do
+  for container in "$name" "$failure_name" "$invalid_name" "$state_failure_name" "$no_web_name" "$rejected_name"; do
     podman container exists "$container" 2>/dev/null || continue
     printf -- '--- %s: %s\n' "$container" \
       "$(podman inspect "$container" --format '{{.State.Status}} exit={{.State.ExitCode}}' 2>&1)" >&2
@@ -43,9 +50,14 @@ cleanup() {
   local status=$?
   trap - ERR
   ((status == 0)) || dump_diagnostics
-  podman rm --force --ignore "$name" "$failure_name" "$invalid_name" "$state_failure_name" >/dev/null 2>&1 || true
-  podman unshare chmod -R u+w "$state_dir" "$empty_state_dir"
-  podman unshare rm -rf "$state_dir" "$empty_state_dir"
+  podman rm --force --ignore "$name" "$failure_name" "$invalid_name" "$state_failure_name" "$no_web_name" "$rejected_name" >/dev/null 2>&1 || true
+  if [[ -n "$no_web_sink_pid" ]]; then
+    kill "$no_web_sink_pid" >/dev/null 2>&1 || true
+    wait "$no_web_sink_pid" 2>/dev/null || true
+  fi
+  podman unshare chmod -R u+w "$state_dir" "$empty_state_dir" "$no_web_state_dir"
+  podman unshare rm -rf "$state_dir" "$empty_state_dir" "$no_web_state_dir"
+  rm -f "$no_web_output"
 }
 trap 'record_failure "$LINENO" "$BASH_COMMAND"' ERR
 trap cleanup EXIT
@@ -95,6 +107,30 @@ wait_for_https() {
   return 1
 }
 
+http_status() {
+  local scheme="$1" target_port="$2" path="$3"
+  curl --insecure --silent --output /dev/null --write-out '%{http_code}' \
+    "${scheme}://127.0.0.1:${target_port}${path}" 2>/dev/null || printf '000'
+}
+
+# A rejected setting must exit before any service starts, with the named
+# status and a diagnostic that explains the refusal.
+expect_rejected_setting() {
+  local expected_status="$1" expected_message="$2"
+  shift 2
+  local status logs
+  set +e
+  podman run --name "$rejected_name" "$@" "$image" >/dev/null 2>&1
+  status=$?
+  set -e
+  logs="$(podman logs "$rejected_name" 2>&1)"
+  if [[ "$status" -ne "$expected_status" || "$logs" != *"$expected_message"* ]]; then
+    printf '%s\nFAIL: %s must exit %s with "%s" (status=%s)\n' "$logs" "$*" "$expected_status" "$expected_message" "$status" >&2
+    exit 1
+  fi
+  podman rm "$rejected_name" >/dev/null
+}
+
 check_private_state() {
   if ! podman exec "$1" /usr/bin/bash -c '
     set -euo pipefail
@@ -137,6 +173,9 @@ podman run -d \
 wait_for_http "$port"
 wait_for_https "$port"
 check_private_state "$name"
+# Without a credential or no-web-interface the web admin is LAN-reachable on
+# host networking; the entrypoint must say so.
+podman logs "$name" 2>&1 | grep -q 'NOTICE: web administration is reachable'
 podman exec "$name" /usr/bin/bash -c '
   set -e
   test "$(id -u):$(id -g)" = 65532:65532
@@ -275,5 +314,76 @@ if ! podman logs "$invalid_name" 2>&1 | grep -q 'PORT must be numeric'; then
   printf 'FAIL: invalid PORT diagnostic missing\n' >&2
   exit 1
 fi
+
+# Web administration knobs (ChairLift ADR-0016). Malformed or unsupported
+# values fail closed instead of starting an unauthenticated web admin.
+expect_rejected_setting 64 "unsupported option 'no-tls'" -e PRINTER_APP_SERVER_OPTIONS=no-web-interface,no-tls
+# The shared printing base builds PAPPL without PAM and ships no /etc/pam.d, so
+# an auth service cannot authenticate anyone in this image; refuse it rather
+# than lock every administrator out with 401.
+podman run --rm --entrypoint /usr/bin/bash "$image" -c 'test ! -e /etc/pam.d/chairlift-printer'
+expect_rejected_setting 78 'names a PAM service this image does not ship' -e PRINTER_APP_AUTH_SERVICE=chairlift-printer
+expect_rejected_setting 78 'PRINTER_APP_ADMIN_GROUP requires PRINTER_APP_AUTH_SERVICE' -e PRINTER_APP_ADMIN_GROUP=nonroot
+
+# With the web interface disabled, every admin page is gone while IPP keeps
+# accepting and printing jobs.
+chmod 0777 "$no_web_state_dir"
+python3 tests/socket-sink.py "$no_web_sink_port" "$no_web_output" &
+no_web_sink_pid=$!
+podman run -d \
+  --name "$no_web_name" \
+  --network host \
+  -e PORT="$no_web_port" \
+  -e PRINTER_APP_SERVER_OPTIONS=no-web-interface \
+  -v "$no_web_state_dir:/var/lib/ghostscript-printer-app:Z" \
+  "$image" >/dev/null
+no_web_system_uri="ipp://127.0.0.1:${no_web_port}/ipp/system"
+no_web_printer_uri="ipp://127.0.0.1:${no_web_port}/ipp/print/no-web-test"
+ready=0
+for _ in $(seq 1 60); do
+  if [[ "$(http_status http "$no_web_port" /)" == 404 && "$(http_status https "$no_web_port" /)" == 404 ]]; then
+    ready=1
+    break
+  fi
+  sleep 1
+done
+if [[ "$ready" -ne 1 ]]; then
+  printf 'FAIL: listener did not answer (with 404) after starting with no-web-interface\n' >&2
+  exit 1
+fi
+if podman logs "$no_web_name" 2>&1 | grep -q 'NOTICE: web administration is reachable'; then
+  printf 'FAIL: entrypoint warned about reachable web administration although it was disabled\n' >&2
+  exit 1
+fi
+podman exec "$no_web_name" ghostscript-printer-app \
+  -u "$no_web_system_uri" \
+  -d no-web-test \
+  -m generic--pcl-6-pcl-xl-printer--pxlcolor-recommended-en \
+  -v "cups:socket://127.0.0.1:${no_web_sink_port}" \
+  add
+for scheme in http https; do
+  for path in / /addprinter /config /network /security /no-web-test/ /no-web-test/config /no-web-test/device; do
+    status="$(http_status "$scheme" "$no_web_port" "$path")"
+    if [[ "$status" != 404 ]]; then
+      printf 'FAIL: %s://127.0.0.1:%s%s returned %s with no-web-interface, expected 404\n' "$scheme" "$no_web_port" "$path" "$status" >&2
+      exit 1
+    fi
+  done
+done
+podman exec "$no_web_name" ghostscript-printer-app -u "$no_web_printer_uri" \
+  submit /usr/share/ghostscript-printer-app/testpage.ps >/dev/null
+for _ in $(seq 1 120); do
+  [[ -s "$no_web_output" ]] && break
+  sleep 0.5
+done
+if [[ ! -s "$no_web_output" ]]; then
+  podman exec "$no_web_name" ghostscript-printer-app -u "$no_web_printer_uri" jobs >&2 || true
+  printf 'FAIL: IPP print job produced no socket output with no-web-interface\n' >&2
+  exit 1
+fi
+wait "$no_web_sink_pid"
+no_web_sink_pid=""
+python3 -c 'import pathlib, sys; assert pathlib.Path(sys.argv[1]).read_bytes().startswith(b"\x1b%-12345X")' "$no_web_output"
+podman stop --time 15 "$no_web_name" >/dev/null
 
 printf 'OK: core FSDK Printer Application passed lifecycle verification\n'

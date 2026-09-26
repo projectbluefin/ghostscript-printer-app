@@ -132,6 +132,36 @@ ghostscript_autoadd(const char *device_info,	// I - Device name (unused)
 
 
 //
+// 'ghostscript_printer_setup()' - Register per-printer web pages.
+//
+
+static void
+ghostscript_printer_setup(pappl_printer_t *printer,	// I - Printer
+			  void            *data)	// I - Global data
+{
+  pappl_system_t *system = papplPrinterGetSystem(printer);
+  char		 path[256];		// Device settings page path
+
+
+  // Keep pappl-retrofit's setup: besides the "Device Settings" page it also
+  // publishes the PPD's human-readable strings, which IPP clients fetch
+  // through printer-strings-uri whether or not the web interface is on.
+  prSetupDeviceSettingsPage(printer, data);
+
+  // pappl-retrofit registers that admin page without checking the server
+  // options; honour "-o server-options=no-web-interface" the same way PAPPL's
+  // own printer pages do so no admin form stays reachable once the web
+  // interface is disabled.
+  if (!(papplSystemGetOptions(system) & PAPPL_SOPTIONS_WEB_INTERFACE))
+  {
+    papplPrinterGetPath(printer, "device", path, sizeof(path));
+    papplSystemRemoveResource(system, path);
+    papplPrinterRemoveLink(printer, "Device Settings");
+  }
+}
+
+
+//
 // 'main()' - Main entry for the ghostscript-printer-app.
 //
 
@@ -221,8 +251,8 @@ main(int  argc,				// I - Number of command-line arguments
     prIdentify,              // Printer identify callback
     prTestPage,              // Test page print callback
     NULL,                     // No extra setup steps for the system
-    prSetupDeviceSettingsPage, // Set up "Device Settings" printer web
-                              // interface page
+    ghostscript_printer_setup, // Set up "Device Settings" printer web
+                              // interface page unless the web interface is off
     spooling_conversions,     // Array of data format conversion rules for
                               // printing in spooling mode
     stream_formats,           // Arrray for stream formats to be generated
