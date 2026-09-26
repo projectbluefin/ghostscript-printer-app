@@ -5,7 +5,7 @@ sources:
   - kind: git_repo
     url: salsa:printing-team/splix.git
     track: debian/*
-    ref: debian/2.0.1-1-0-g505f24d43fdb86eaa41a44486e7ef88226bb2c0c
+    ref: debian/2.0.1-2-0-gd4266cd16e69480afb00054f12b0fd4b99f54de9
 
 build-depends:
   - printer-app/pyppd.bst
