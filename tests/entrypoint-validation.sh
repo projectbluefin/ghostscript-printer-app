@@ -45,8 +45,8 @@ expect_rejection 64 'PRINTER_APP_AUTH_SERVICE must be a PAM service name' PRINTE
 
 # A group is only meaningful once an auth service authenticates users, and
 # PAPPL skips the group check entirely for a group it cannot resolve.
-expect_rejection 64 'PRINTER_APP_ADMIN_GROUP must be a group name' PRINTER_APP_ADMIN_GROUP='bad;group' PRINTER_APP_AUTH_SERVICE=login
-expect_rejection 64 'PRINTER_APP_ADMIN_GROUP must be a group name' PRINTER_APP_ADMIN_GROUP='1admins' PRINTER_APP_AUTH_SERVICE=login
+expect_rejection 64 'PRINTER_APP_ADMIN_GROUP must be a group name' PRINTER_APP_ADMIN_GROUP='bad;group'
+expect_rejection 64 'PRINTER_APP_ADMIN_GROUP must be a group name' PRINTER_APP_ADMIN_GROUP='1admins'
 expect_rejection 78 'PRINTER_APP_ADMIN_GROUP requires PRINTER_APP_AUTH_SERVICE' PRINTER_APP_ADMIN_GROUP=wheel
 
 if ((failures > 0)); then

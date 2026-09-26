@@ -42,14 +42,23 @@ if [[ -n "${PRINTER_APP_SERVER_OPTIONS:-}" ]]; then
   done
 fi
 
+# Syntax first (exit 64), then what this image can honour (exit 78), so a
+# malformed value is diagnosed the same way on any host.
+if [[ -n "${PRINTER_APP_AUTH_SERVICE:-}" ]]; then
+  [[ "$PRINTER_APP_AUTH_SERVICE" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] \
+    || usage_error 'PRINTER_APP_AUTH_SERVICE must be a PAM service name: letters, digits, "_", "." or "-", not starting with "." or "-"'
+fi
+if [[ -n "${PRINTER_APP_ADMIN_GROUP:-}" ]]; then
+  [[ "$PRINTER_APP_ADMIN_GROUP" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]] \
+    || usage_error 'PRINTER_APP_ADMIN_GROUP must be a group name: letters, digits, "_", "." or "-", starting with a letter or "_"'
+fi
+
 # A PAM service name is a file under /etc/pam.d. The shared printing base builds
 # PAPPL with --disable-libpam and ships no PAM stack, so today no service can
 # satisfy this check and no-web-interface is the only supported way to close
 # the web admin surface. Forwarding the option anyway would lock every
 # administrator out with 401 rather than authenticate anyone.
 if [[ -n "${PRINTER_APP_AUTH_SERVICE:-}" ]]; then
-  [[ "$PRINTER_APP_AUTH_SERVICE" =~ ^[A-Za-z0-9][A-Za-z0-9_.-]*$ ]] \
-    || usage_error 'PRINTER_APP_AUTH_SERVICE must be a PAM service name: letters, digits, "_", "." or "-", not starting with "." or "-"'
   [[ -f "/etc/pam.d/$PRINTER_APP_AUTH_SERVICE" ]] \
     || config_error "PRINTER_APP_AUTH_SERVICE=${PRINTER_APP_AUTH_SERVICE} names a PAM service this image does not ship (/etc/pam.d/${PRINTER_APP_AUTH_SERVICE} is missing); set PRINTER_APP_SERVER_OPTIONS=no-web-interface to disable web administration instead"
 fi
@@ -58,8 +67,6 @@ fi
 # them, and PAPPL treats an unresolvable group as "no group check", so both an
 # unset auth service and an unknown group would start unauthenticated.
 if [[ -n "${PRINTER_APP_ADMIN_GROUP:-}" ]]; then
-  [[ "$PRINTER_APP_ADMIN_GROUP" =~ ^[A-Za-z_][A-Za-z0-9_.-]*$ ]] \
-    || usage_error 'PRINTER_APP_ADMIN_GROUP must be a group name: letters, digits, "_", "." or "-", starting with a letter or "_"'
   [[ -n "${PRINTER_APP_AUTH_SERVICE:-}" ]] \
     || config_error 'PRINTER_APP_ADMIN_GROUP requires PRINTER_APP_AUTH_SERVICE; a group cannot be enforced without authentication'
   group_known=0
