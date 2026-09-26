@@ -18,12 +18,17 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
 
 config:
+  # SpliX's threaded page cache shares unlocked state between the cache
+  # controller, compression and render threads: under CPU contention
+  # rastertoqpdl intermittently segfaults with no output. Build the serial
+  # renderer, which emits the same QPDL.
   build-commands:
     - >-
       make -j2 V=1
+      DISABLE_THREADS=1
       CUPSFILTER="/usr/lib/cups/filter"
-      rastertoqpdl_LIBS="-lcupsimage -lcups -lpthread -ljbig85"
-      pstoqpdl_LIBS="-lcupsimage -lcups -lpthread"
+      rastertoqpdl_LIBS="-lcupsimage -lcups -ljbig85"
+      pstoqpdl_LIBS="-lcupsimage -lcups"
     - cp *.ppd ppd/
     - pyppd -v -o splix-ppds ppd
   install-commands:

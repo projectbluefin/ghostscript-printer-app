@@ -1,17 +1,59 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
+set -Eeuo pipefail
 
 image="ghcr.io/projectbluefin/ghostscript-printer-app:build"
 name="ghostscript-printer-app-packaged-drivers"
 port="${PORT:-18030}"
 state_dir="$(mktemp -d)"
 
+# On any failure, name the failing command and dump the appliance state so a
+# CI failure explains itself. Subshells inherit the ERR trap (-E); only the top
+# level records, so the reported line is the script's own.
+failed_command=""
+record_failure() {
+  ((BASH_SUBSHELL == 0)) && [[ -z "$failed_command" ]] && failed_command="line $1: ${2%%$'\n'*}"
+  return 0
+}
+
+dump_diagnostics() {
+  printf 'FAIL: %s\n' "${failed_command:-explicit exit}" >&2
+  podman ps -a >&2 || true
+  if podman container exists "$name" 2>/dev/null; then
+    printf -- '--- %s: %s\n' "$name" \
+      "$(podman inspect "$name" --format '{{.State.Status}} exit={{.State.ExitCode}}' 2>&1)" >&2
+    podman logs --tail 50 "$name" >&2 2>&1 || true
+  fi
+  if podman unshare test -s "$state_dir/ghostscript-printer-app.log"; then
+    printf -- '--- application log\n' >&2
+    podman unshare tail -n 50 "$state_dir/ghostscript-printer-app.log" >&2 || true
+  fi
+}
+
 cleanup() {
+  local status=$?
+  trap - ERR
+  ((status == 0)) || dump_diagnostics
   podman rm -f "$name" >/dev/null 2>&1 || true
   podman unshare rm -rf "$state_dir"
 }
+trap 'record_failure "$LINENO" "$BASH_COMMAND"' ERR
 trap cleanup EXIT
+
+# Both catalog phases reuse one port, so require this container's own web UI;
+# a timeout fails here instead of surfacing as a confusing drivers query error.
+wait_for_app() {
+  local response
+  for _ in $(seq 1 60); do
+    [[ "$(podman inspect "$name" --format '{{.State.Running}}')" == true ]] || break
+    if response="$(curl --fail --silent "http://127.0.0.1:${port}/" 2>/dev/null)" &&
+      [[ "$response" == *'<title>Ghostscript Printer Application</title>'* ]]; then
+      return 0
+    fi
+    sleep 1
+  done
+  printf 'FAIL: %s did not serve its web UI on port %s\n' "$name" "$port" >&2
+  return 1
+}
 
 just build
 
@@ -49,7 +91,9 @@ splix_runtime_graph="$(just bst show --deps run --format '%{name}' printer-app/s
 chmod 0777 "$state_dir"
 podman run --rm --entrypoint /usr/bin/bash \
   -v "$state_dir:/state:Z" "$image" -c '
-  set -euo pipefail
+  set -Eeuo pipefail
+  # Name the failing check (and its caller); the host otherwise sees only a status.
+  trap '\''status=$?; ((BASH_SUBSHELL)) || printf "FAIL: in-container line %s%s exited %s: %s\n" "$LINENO" "${FUNCNAME:+ (${FUNCNAME[0]} called from line ${BASH_LINENO[0]})}" "$status" "$BASH_COMMAND" >&2'\'' ERR
 
   filter_dir=/usr/lib/cups/filter
   ppd_dir=/usr/share/ppd
@@ -273,10 +317,7 @@ podman run --rm --entrypoint /usr/bin/bash \
 podman run -d --name "$name" --network host -e PORT="$port" \
   -e PPD_PATHS=/var/lib/ghostscript-printer-app/ppd \
   -v "$state_dir:/var/lib/ghostscript-printer-app:Z" "$image" >/dev/null
-for _ in $(seq 1 60); do
-  curl --fail --silent "http://127.0.0.1:${port}/" >/dev/null 2>&1 && break
-  sleep 1
-done
+wait_for_app
 drivers="$(podman exec "$name" ghostscript-printer-app -u "ipp://127.0.0.1:${port}/ipp/system" drivers)"
 for marker in \
   "Kodak ESP 3" \
@@ -299,10 +340,7 @@ podman rm "$name" >/dev/null
 podman run -d --name "$name" --network host -e PORT="$port" \
   -e PPD_PATHS=/usr/share/ppd/ \
   -v "$state_dir:/var/lib/ghostscript-printer-app:Z" "$image" >/dev/null
-for _ in $(seq 1 60); do
-  curl --fail --silent "http://127.0.0.1:${port}/" >/dev/null 2>&1 && break
-  sleep 1
-done
+wait_for_app
 installed_drivers="$(podman exec "$name" ghostscript-printer-app -u "ipp://127.0.0.1:${port}/ipp/system" drivers)"
 [[ "$installed_drivers" == *"kodak--esp-3-aio--en"* ]]
 [[ "$installed_drivers" == *"brlaser"* ]]

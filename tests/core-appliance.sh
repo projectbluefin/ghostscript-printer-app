@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-set -euo pipefail
-
+set -Eeuo pipefail
 
 image="ghcr.io/projectbluefin/ghostscript-printer-app:build"
 name="ghostscript-printer-app-smoke"
@@ -12,11 +11,43 @@ failure_port="$((port + 1))"
 state_dir="$(mktemp -d)"
 empty_state_dir="$(mktemp -d)"
 
+# On any failure, name the failing command and dump the appliance state so a
+# CI failure explains itself. Subshells inherit the ERR trap (-E); only the top
+# level records, so the reported line is the script's own.
+failed_command=""
+record_failure() {
+  ((BASH_SUBSHELL == 0)) && [[ -z "$failed_command" ]] && failed_command="line $1: ${2%%$'\n'*}"
+  return 0
+}
+
+dump_diagnostics() {
+  local container
+  printf 'FAIL: %s\n' "${failed_command:-explicit exit}" >&2
+  podman ps -a >&2 || true
+  for container in "$name" "$failure_name" "$invalid_name" "$state_failure_name"; do
+    podman container exists "$container" 2>/dev/null || continue
+    printf -- '--- %s: %s\n' "$container" \
+      "$(podman inspect "$container" --format '{{.State.Status}} exit={{.State.ExitCode}}' 2>&1)" >&2
+    podman logs --tail 50 "$container" >&2 2>&1 || true
+  done
+  printf -- '--- state volume\n' >&2
+  podman unshare find "$state_dir" "$state_dir/cups" "$state_dir/.cups/ssl" "$state_dir/spool" \
+    -maxdepth 1 -printf '%m %U:%G %p\n' >&2 2>/dev/null || true
+  if podman unshare test -s "$state_dir/ghostscript-printer-app.log"; then
+    printf -- '--- application log\n' >&2
+    podman unshare tail -n 50 "$state_dir/ghostscript-printer-app.log" >&2 || true
+  fi
+}
+
 cleanup() {
+  local status=$?
+  trap - ERR
+  ((status == 0)) || dump_diagnostics
   podman rm -f "$name" "$failure_name" "$invalid_name" "$state_failure_name" >/dev/null 2>&1 || true
   podman unshare chmod -R u+w "$state_dir" "$empty_state_dir"
   podman unshare rm -rf "$state_dir" "$empty_state_dir"
 }
+trap 'record_failure "$LINENO" "$BASH_COMMAND"' ERR
 trap cleanup EXIT
 
 wait_for_http() {
@@ -162,7 +193,10 @@ wait_for_http "$failure_port"
 wait_for_https "$failure_port"
 check_private_state "$failure_name"
 keys_after="$(podman exec "$failure_name" /usr/bin/bash -c 'sha256sum /var/lib/ghostscript-printer-app/.cups/ssl/*.key')"
-test "$keys_before" = "$keys_after"
+if [[ "$keys_before" != "$keys_after" ]]; then
+  printf 'FAIL: TLS keys changed across restart\nbefore:\n%s\nafter:\n%s\n' "$keys_before" "$keys_after" >&2
+  exit 1
+fi
 podman exec "$failure_name" /usr/bin/bash -c '
   set -e
   state=/var/lib/ghostscript-printer-app
