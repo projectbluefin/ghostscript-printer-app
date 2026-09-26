@@ -74,18 +74,81 @@ jobs:
           NEW: ${{ steps.track.outputs.new }}
         run: |
           set -euo pipefail
-          branch=deps/fsdk-containers
+          bot_email='267480593+mergeraptor[bot]@users.noreply.github.com'
+          base_branch=deps/fsdk-containers
           title="chore(deps): update fsdk-containers to ${NEW:0:12}"
           git config user.name 'mergeraptor[bot]'
-          git config user.email '267480593+mergeraptor[bot]@users.noreply.github.com'
+          git config user.email "$bot_email"
+
+          remote="https://github.com/${REPOSITORY}.git"
+          basic="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
+          echo "::add-mask::$basic"
+          auth_git() {
+            git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $basic" "$@"
+          }
+
+          # Find the first candidate branch name (deps/fsdk-containers,
+          # deps/fsdk-containers-2, ...) that is safe to reuse: either it
+          # doesn't exist yet, or its current tip was produced entirely by
+          # mergeraptor[bot] (checking both author and committer email, so an
+          # amend or rebase that keeps the original author but changes the
+          # committer is still treated as reviewer-owned). The first
+          # non-bot-owned branch encountered is reported as a conflict.
+          branch=""
+          remote_head=""
+          conflict=false
+          conflicted_branch=""
+          n=1
+          while :; do
+            candidate="$base_branch"
+            [[ "$n" -gt 1 ]] && candidate="${base_branch}-${n}"
+            head="$(git ls-remote "$remote" "refs/heads/$candidate" | cut -f1)"
+            if [[ -z "$head" ]]; then
+              branch="$candidate"
+              break
+            fi
+            auth_git fetch "$remote" "$candidate"
+            tip_author="$(git log -1 --format='%ae' FETCH_HEAD)"
+            tip_committer="$(git log -1 --format='%ce' FETCH_HEAD)"
+            if [[ "$tip_author" == "$bot_email" && "$tip_committer" == "$bot_email" ]]; then
+              branch="$candidate"
+              remote_head="$head"
+              break
+            fi
+            if [[ "$conflict" == "false" ]]; then
+              conflict=true
+              conflicted_branch="$candidate"
+            fi
+            n=$((n + 1))
+          done
+
           git switch --create "$branch"
           git add elements/fsdk-containers.bst
           git commit --signoff -m "$title"
-          basic="$(printf 'x-access-token:%s' "$GH_TOKEN" | base64 -w0)"
-          echo "::add-mask::$basic"
-          git -c http.https://github.com/.extraheader="AUTHORIZATION: basic $basic" \
-            push --force "https://github.com/${REPOSITORY}.git" "HEAD:refs/heads/$branch"
+
+          if [[ -n "$remote_head" ]]; then
+            # Reusing a bot-owned branch: atomically refuse the push if the
+            # remote head has moved since we inspected it (e.g. a concurrent
+            # human edit landed between the fetch above and this push).
+            if ! auth_git push --force-with-lease="$branch:$remote_head" "$remote" "HEAD:refs/heads/$branch"; then
+              printf '::error::Refusing to force-push %s: its head moved since inspection, which looks like a reviewer edit landed concurrently. Re-run this workflow once the branch settles.\n' "$branch"
+              exit 1
+            fi
+          else
+            auth_git push "$remote" "HEAD:refs/heads/$branch"
+          fi
+
+          if [[ "$conflict" == "true" ]]; then
+            printf '::warning::%s has commits not authored and committed by mergeraptor[bot]; a reviewer appears to have amended it. Opened %s instead of overwriting it.\n' "$conflicted_branch" "$branch"
+            if existing="$(gh pr list --head "$conflicted_branch" --base testing --state open --json number --jq '.[0].number')" && [[ -n "$existing" ]]; then
+              gh pr comment "$existing" --body "A new scheduled fsdk-containers update was proposed on \`$branch\` instead of updating this branch, because this branch has commits not authored and committed by mergeraptor[bot] (a reviewer appears to have amended it). This PR was left untouched to avoid a destructive overwrite."
+            fi
+          fi
+
           body="Moves the fsdk-containers junction (FSDK and the shared printing base) from ${OLD} to ${NEW}: https://github.com/projectbluefin/fsdk-containers/compare/${OLD}...${NEW}"
+          if [[ "$conflict" == "true" ]]; then
+            body="$body"$'\n\n'"This is a fresh proposal branch: \`$conflicted_branch\` has commits not authored and committed by mergeraptor[bot], so it was left untouched instead of being force-pushed over."
+          fi
           if existing="$(gh pr list --head "$branch" --base testing --state open --json number --jq '.[0].number')" && [[ -n "$existing" ]]; then
             gh pr edit "$existing" --title "$title" --body "$body"
             printf 'Updated dependency PR #%s\n' "$existing"
