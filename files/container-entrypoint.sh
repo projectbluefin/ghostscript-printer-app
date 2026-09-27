@@ -53,14 +53,17 @@ if [[ -n "${PRINTER_APP_ADMIN_GROUP:-}" ]]; then
     || usage_error 'PRINTER_APP_ADMIN_GROUP must be a group name: letters, digits, "_", "." or "-", starting with a letter or "_"'
 fi
 
-# A PAM service name is a file under /etc/pam.d. The shared printing base builds
-# PAPPL with --disable-libpam and ships no PAM stack, so today no service can
-# satisfy this check and no-web-interface is the only supported way to close
-# the web admin surface. Forwarding the option anyway would lock every
-# administrator out with 401 rather than authenticate anyone.
+# The shared printing base builds PAPPL with --disable-libpam, so
+# pappl_authenticate_user() rejects every credential no matter which PAM
+# service is named, and once auth-service is set even localhost loses the
+# unauthenticated path. Forwarding the option would lock every administrator
+# out with 401 rather than authenticate anyone. The presence of
+# /etc/pam.d/<name> (the image ships /etc/pam.d/cups with CUPS) says nothing
+# about whether PAPPL can use it, so refuse every value until the base builds
+# PAPPL with PAM; no-web-interface is the only supported way to close the web
+# admin surface today.
 if [[ -n "${PRINTER_APP_AUTH_SERVICE:-}" ]]; then
-  [[ -f "/etc/pam.d/$PRINTER_APP_AUTH_SERVICE" ]] \
-    || config_error "PRINTER_APP_AUTH_SERVICE=${PRINTER_APP_AUTH_SERVICE} names a PAM service this image does not ship (/etc/pam.d/${PRINTER_APP_AUTH_SERVICE} is missing); set PRINTER_APP_SERVER_OPTIONS=no-web-interface to disable web administration instead"
+  config_error "PRINTER_APP_AUTH_SERVICE=${PRINTER_APP_AUTH_SERVICE} cannot be honoured: this image's PAPPL is built without PAM, so auth-service would answer every administration request with 401; set PRINTER_APP_SERVER_OPTIONS=no-web-interface to disable web administration instead"
 fi
 
 # admin-group only restricts who may administer once auth-service authenticates

@@ -42,6 +42,11 @@ expect_rejection 64 'PRINTER_APP_AUTH_SERVICE must be a PAM service name' PRINTE
 expect_rejection 64 'PRINTER_APP_AUTH_SERVICE must be a PAM service name' PRINTER_APP_AUTH_SERVICE='login other'
 expect_rejection 64 'PRINTER_APP_AUTH_SERVICE must be a PAM service name' PRINTER_APP_AUTH_SERVICE=-login
 expect_rejection 64 'PRINTER_APP_AUTH_SERVICE must be a PAM service name' PRINTER_APP_AUTH_SERVICE='a=b'
+# Until the base builds PAPPL with PAM every well-formed service is refused,
+# including ones whose /etc/pam.d file exists (cups ships one).
+expect_rejection 78 'PAPPL is built without PAM' PRINTER_APP_AUTH_SERVICE=cups
+expect_rejection 78 'PAPPL is built without PAM' PRINTER_APP_AUTH_SERVICE=chairlift-printer
+expect_rejection 78 'PAPPL is built without PAM' PRINTER_APP_AUTH_SERVICE=cups PRINTER_APP_ADMIN_GROUP=wheel
 
 # A group is only meaningful once an auth service authenticates users, and
 # PAPPL skips the group check entirely for a group it cannot resolve.

@@ -392,7 +392,7 @@ cannot honour stops the container instead of starting it unauthenticated
 | Variable | Forwarded as | Accepted values |
 | --- | --- | --- |
 | `PRINTER_APP_SERVER_OPTIONS` | `-o server-options=…` | Comma-separated PAPPL server options from the allow-list: `no-web-interface`. |
-| `PRINTER_APP_AUTH_SERVICE` | `-o auth-service=…` | A PAM service name whose configuration exists at `/etc/pam.d/<name>` inside the image. |
+| `PRINTER_APP_AUTH_SERVICE` | `-o auth-service=…` | A PAM service name (`[A-Za-z0-9_.-]`). Refused with exit `78` while the image's PAPPL is built without PAM (see below). |
 | `PRINTER_APP_ADMIN_GROUP` | `-o admin-group=…` | A group from the image's `/etc/group`; requires `PRINTER_APP_AUTH_SERVICE`. |
 
 `PRINTER_APP_SERVER_OPTIONS=no-web-interface` is the supported way to run the
@@ -413,15 +413,16 @@ podman run -d \
   "$image"
 ```
 
-`PRINTER_APP_AUTH_SERVICE` and `PRINTER_APP_ADMIN_GROUP` are accepted so the
+`PRINTER_APP_AUTH_SERVICE` and `PRINTER_APP_ADMIN_GROUP` are parsed so the
 configuration surface is stable for supervisors such as ChairLift, but the
-shared printing base builds PAPPL with `--disable-libpam` and the image ships no
-PAM stack, so no service name currently passes validation and the container
-exits `78` with a diagnostic naming `no-web-interface` as the alternative.
-Forwarding the option regardless would not authenticate anyone: PAPPL would
-answer every administration request with `401`. Authenticated web
-administration becomes available once the base ships PAM and a service
-configuration for this appliance.
+shared printing base builds PAPPL with `--disable-libpam`, so every service
+name is refused and the container exits `78` with a diagnostic naming
+`no-web-interface` as the alternative. The refusal does not depend on whether
+`/etc/pam.d/<name>` exists in the image (`/etc/pam.d/cups` ships with CUPS):
+forwarding `auth-service` to a PAM-less PAPPL would not authenticate anyone,
+it would answer every administration request, including from `localhost`, with
+`401`. Authenticated web administration becomes available once the base builds
+PAPPL with PAM and ships a service configuration for this appliance.
 
 Setting an unlisted server option such as `no-tls` or `none`, a name with
 characters outside `[A-Za-z0-9_.-]`, a group PAPPL cannot resolve (it would
