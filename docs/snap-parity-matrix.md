@@ -22,7 +22,9 @@ Ghostscript follows the reviewed FreeDesktop SDK (FSDK) pin instead, per
   document.
 - Snap source versions below come from `snap/snapcraft.yaml`'s `source-tag`
   fields, still committed in this repository. OCI source versions come from
-  each `elements/printer-app/*.bst` element's `ref:`/`track:`. Components
+  each `elements/printer-app/*.bst` element's `ref:`/`track:`. Both sets of
+  literals are re-derived from those files by `tests/snap-parity-matrix.py`,
+  which `just validate` runs on every pull request. Components
   inherited from the shared printing base (`fsdk-containers.bst:printing/base.bst`,
   junctioned at a pinned commit in `elements/fsdk-containers.bst`) or from the
   FSDK release that junction pins are marked **inherited**; their versions
@@ -92,9 +94,13 @@ printing base) point at the file that holds the current value instead of
 repeating it. Only this repository's own directly-pinned elements
 (`elements/printer-app/*.bst`, not part of the shared base) and the Snap's
 committed `snap/snapcraft.yaml` values are reproduced literally, since
-neither changes without a commit to this document's own repository.
-`tests/appliance-parity.sh` does not check this document's prose, only the
-driver/backend/PPD-provider inventory below.
+neither changes without a commit to this document's own repository. Those
+literals are not trusted: `tests/snap-parity-matrix.py` (run by `just
+validate`, so on every pull request) re-reads each `elements/printer-app/*.bst`
+`ref:`/`track:` and each `snap/snapcraft.yaml` `source-tag:` and fails when a
+reproduced value, a Status verdict, or the "Differs" list below no longer
+follows from them. `tests/appliance-parity.sh` checks the
+driver/backend/PPD-provider inventory in the built image, not this document.
 
 ## Reading this matrix
 
@@ -102,10 +108,12 @@ driver/backend/PPD-provider inventory below.
   `tests/appliance-parity.sh`'s backend, filter, command, and PPD-provider
   checks. If a family here is renamed or dropped from the image, that gate
   fails the build before this document could go stale silently.
-- "Differs" rows (Ghostscript/ghostpdl, brlaser, SpliX) are known,
+- "Differs" rows — `pappl-retrofit`, `Ghostscript (gs binary)` — are known,
   intentional or currently-unreconciled version gaps against the Snap, not
   missing drivers: the driver family itself is present and gated in both
-  distributions, only the pinned upstream revision differs.
+  distributions, only the pinned upstream revision differs. This list is
+  checked against the table's Status column by
+  `tests/snap-parity-matrix.py`.
 - "Inherited"/"unknown" rows are components this repository does not pin
   directly; they come from the shared fsdk-containers printing base and the
   FSDK release it pins. Their versions above are a snapshot of those pinned

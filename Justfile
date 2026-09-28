@@ -48,6 +48,7 @@ bst *ARGS:
         bash -c 'bst "$@"' -- --no-interactive ${BST_FLAGS:-} "${RE_FLAG[@]}" {{ ARGS }}
 
 validate:
+    python3 tests/snap-parity-matrix.py
     just bst show --deps all oci/ghostscript-printer-app.bst
 
 fetch:
