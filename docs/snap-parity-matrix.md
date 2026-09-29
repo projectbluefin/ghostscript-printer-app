@@ -63,8 +63,8 @@ those pinned elements resolved to when this document was last edited.
 | cups-filters (foomatic-rip, gstoraster, pdftops, rastertoescpx, rastertopclx) | Inherited from the shared base (FSDK `components/cups-filters.bst`), with the patches under fsdk-containers `patches/printing/cups-filters/` | `cups-filters` part: `2.0.1` | inherited — check the shared base's pinned ref against the Snap value above |
 | foomatic-db (PPD/manufacturer data) | Inherited from `fsdk-containers.bst:printing/foomatic-db.bst` (FSDK `components/foomatic-db.bst`), used by `elements/printer-app/core-payload.bst` | `foomatic-db` part: `20240504` | inherited — check the shared base's pinned ref against the Snap value above |
 | foomatic-db-engine (`foomatic-compiledb`) | `elements/printer-app/foomatic-db-engine.bst`: commit `e4e7b9cd` (tracks `master`) | Debian package `foomatic-db-engine` via `build-packages:`, no pinned source | unknown — different packaging model, versions not directly comparable |
-| brlaser | `elements/printer-app/brlaser.bst`: `pdewacht/brlaser` `v6` | `brlaser` part: `Owl-Maintain/brlaser` `v6.2.8` | **differs** — the Snap has moved to a different upstream fork (`Owl-Maintain`) at a newer tag; this repository still tracks the original `pdewacht/brlaser` `v6` |
-| SpliX | `elements/printer-app/splix.bst`: `debian/2.0.1-1` | `splix` part: `debian/2.0.1-2` | **differs** — Snap is one Debian packaging revision ahead |
+| brlaser | `elements/printer-app/brlaser.bst`: `Owl-Maintain/brlaser` `v6.2.8` | `brlaser` part: `Owl-Maintain/brlaser` `v6.2.8` | match |
+| SpliX | `elements/printer-app/splix.bst`: `debian/2.0.1-2` | `splix` part: `debian/2.0.1-2` | match |
 | c2esp | `elements/printer-app/c2esp.bst`: `debian/27-11` | `c2esp` part: `debian/27-11` | match |
 | foo2zjs | `elements/printer-app/foo2zjs.bst`: `debian/20200505dfsg0-5` | `foo2zjs` part: `debian/20200505dfsg0-5` | match |
 | fxlinuxprint | `elements/printer-app/fxlinuxprint.bst`: `debian/1.1.0+ds-4` | `fxlinuxprint` part: `debian/1.1.0+ds-4` | match |
