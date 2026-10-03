@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Deterministic metadata transitions; these do not claim OCI verification."""
+import contextlib
 import importlib.util
+import io
 from pathlib import Path
+import subprocess
 import tempfile
 import sys
 from unittest.mock import patch
@@ -83,6 +86,88 @@ class Metadata(unittest.TestCase):
         with self.assertRaises(ValueError):
             sync.synchronize(self.root, "b" * 40, "b" * 40, self.fsdk, self.gs)
 
+
+    def snapshot(self):
+        return {name: (self.root / name).read_bytes() for name in sync.PATHS}
+
+    def test_base_refs_must_be_full_commits(self):
+        before = self.snapshot()
+        for old, new in (("b" * 39, "c" * 40), ("b" * 40, "C" * 40), ("main", "c" * 40)):
+            with self.subTest(old=old, new=new), self.assertRaisesRegex(ValueError, "full commits"):
+                sync.synchronize(self.root, old, new, self.fsdk, self.gs)
+        self.assertEqual(before, self.snapshot())
+
+    def test_ghostscript_must_be_a_stable_three_component_release(self):
+        before = self.snapshot()
+        for tag in ("ghostpdl-10.08", "ghostpdl-10.08.0rc.1"):
+            self.gs = info("https://github.com/ArtifexSoftware/ghostpdl.git", tag)
+            with self.subTest(tag=tag), self.assertRaisesRegex(ValueError, "stable three-component"):
+                self.run_sync()
+        self.assertEqual(before, self.snapshot())
+
+    def test_version_file_must_carry_a_positive_revision(self):
+        for current in ("10.07.1\n", "10.07.1-0\n", "10.07-2\n", "v10.07.1-2\n"):
+            (self.root / "VERSION").write_text(current)
+            before = self.snapshot()
+            with self.subTest(current=current), self.assertRaisesRegex(ValueError, "positive revision"):
+                self.run_sync()
+            self.assertEqual(before, self.snapshot())
+
+    def test_failed_write_restores_every_file(self):
+        before = self.snapshot()
+        write_text = Path.write_text
+        failed = []
+
+        def fail_on_readme(path, contents, *args, **kwargs):
+            if path.name == "README.md" and not failed:
+                failed.append(path)
+                raise OSError("disk full")
+            return write_text(path, contents, *args, **kwargs)
+
+        with patch.object(Path, "write_text", fail_on_readme), self.assertRaises(OSError):
+            self.run_sync()
+        self.assertEqual(failed, [self.root / "README.md"])
+        self.assertEqual(before, self.snapshot())
+
+    def test_upstream_lookup_failure_is_reported_not_raised(self):
+        for outcome in (subprocess.CalledProcessError(128, "git"),
+                        subprocess.TimeoutExpired("git", 60), ""):
+            kwargs = ({"return_value": outcome} if isinstance(outcome, str)
+                      else {"side_effect": outcome})
+            with self.subTest(outcome=type(outcome).__name__), \
+                    patch.object(sync.subprocess, "check_output", **kwargs):
+                self.assertEqual(sync.upstream_release("https://example.test", "ghostpdl-"),
+                                 "unknown (upstream lookup failed)")
+
+    def test_main_synchronizes_from_fsdk_and_its_ghostscript(self):
+        shown = []
+
+        def source_info(target):
+            shown.append(target)
+            return self.fsdk if target == sync.FSDK else self.gs
+
+        out = io.StringIO()
+        argv = ["sync-fsdk-metadata.py", "--old", "b" * 40, "--new", "c" * 40]
+        with patch.object(sync, "ROOT", self.root), patch.object(sys, "argv", argv), \
+                patch.object(sync, "source_info", source_info), \
+                patch.object(sync, "upstream_release", return_value="1.2.3"), \
+                contextlib.redirect_stdout(out):
+            sync.main()
+        self.assertEqual(shown, [sync.FSDK, sync.FSDK + ":components/ghostscript.bst"])
+        self.assertEqual((self.root / "VERSION").read_text(), "10.07.1-3\n")
+        self.assertEqual(out.getvalue().splitlines(), [
+            "FSDK 27.08.1 (" + "a" * 40 + "); Ghostscript 10.07.1 (" + "a" * 40
+            + "); application 10.07.1-3",
+            "Upstream FSDK latest stable tag: 1.2.3",
+            "Upstream Ghostscript latest stable tag: 1.2.3",
+        ])
+
+    def test_source_info_asks_bst_for_resolved_provenance_only(self):
+        with patch.object(sync.subprocess, "check_output", return_value="x") as run:
+            self.assertEqual(sync.source_info(sync.FSDK), "x")
+        run.assert_called_once_with(
+            ["just", "bst", "--no-colors", "show", "--deps", "none",
+             "--format", "%{source-info}", sync.FSDK], cwd=sync.ROOT, text=True)
 
 if __name__ == "__main__":
     unittest.main()
