@@ -35,4 +35,3 @@ jobs:
     with:
       brand_name: "Ghostscript Printer App"
       brand_emoji: "👻"
-    secrets: inherit
