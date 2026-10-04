@@ -51,6 +51,7 @@ verify-fsdk-metadata:
     python3 tests/fsdk-metadata.py
 
 validate:
+    just verify-promote-context-mapping
     just verify-fsdk-metadata
     python3 tests/snap-parity-matrix.py
     just bst show --deps all oci/ghostscript-printer-app.bst
