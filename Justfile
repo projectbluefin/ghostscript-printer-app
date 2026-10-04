@@ -50,7 +50,12 @@ bst *ARGS:
 verify-fsdk-metadata:
     python3 tests/fsdk-metadata.py
 
+# Every check here runs on the host in seconds with no image and no printer, so
+# the pull-request gate runs it before the 360-minute appliance build. Keep it
+# that way: anything needing the built image belongs in `just verify`.
 validate:
+    just verify-rootless-usb
+    just verify-entrypoint-validation
     just verify-fsdk-metadata
     python3 tests/snap-parity-matrix.py
     just bst show --deps all oci/ghostscript-printer-app.bst
@@ -149,8 +154,6 @@ verify-entrypoint-validation:
     tests/entrypoint-validation.sh
 
 verify:
-    just verify-rootless-usb
-    just verify-entrypoint-validation
     just validate
     just verify-cups-patch-chain
     just verify-ghostscript-romfs
