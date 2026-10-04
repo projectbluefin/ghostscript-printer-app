@@ -16,6 +16,11 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/jpeg.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - sed -i 's|"/var/lib/hp|"/var/lib/ghostscript-printer-app/hplip|g' common/utils.c common/utils.h
@@ -47,7 +52,7 @@ config:
       --disable-qt4
       --disable-qt5
       --disable-policykit
-    - make -j"%{max-jobs}" hpijs
+    - make -j"${MAXJOBS}" hpijs
     - |
       sed -i \
         -e 's|^home=.*|home=/usr/share/hplip|' \

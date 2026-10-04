@@ -19,10 +19,15 @@ public:
           - "%{includedir}/**"
           - "%{libdir}/libijs.so"
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - cd ijs && autoreconf --force --install && ./configure --prefix=/usr --libdir="%{libdir}" --enable-shared --disable-static
-    - make -C ijs -j"%{max-jobs}"
+    - make -C ijs -j"${MAXJOBS}"
   install-commands:
     - make -C ijs DESTDIR="$PWD/full-install" install
     - mkdir -p "%{install-root}%{libdir}" && cp -a "full-install%{libdir}"/libijs*.so* "%{install-root}%{libdir}/"

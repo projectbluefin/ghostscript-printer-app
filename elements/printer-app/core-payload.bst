@@ -13,6 +13,11 @@ build-depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/perl.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/perl-xml-parser.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - |
@@ -40,7 +45,7 @@ config:
         payload/foomatic/db/source/driver/pentaxpj.xml \
         payload/foomatic/db/source/driver/ppmtomd.xml
       FOOMATICDB="$PWD/payload/foomatic" \
-        foomatic-compiledb -j "%{max-jobs}" -t ppd -d payload/foomatic-ppds
+        foomatic-compiledb -j "${MAXJOBS}" -t ppd -d payload/foomatic-ppds
       pyppd -v -o foomatic-ppds payload/foomatic-ppds
       pyppd -v -o manufacturer-ppds payload/foomatic/db/source/PPD
   install-commands:

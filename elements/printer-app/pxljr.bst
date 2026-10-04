@@ -20,11 +20,16 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - autoreconf --force --install
     - ./configure --prefix=/usr
-    - make -j"%{max-jobs}"
+    - make -j"${MAXJOBS}"
     - |
       mkdir ppd
       cp HP-Color_LaserJet_3550-pxljr.ppd ppd/

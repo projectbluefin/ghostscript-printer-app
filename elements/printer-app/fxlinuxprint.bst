@@ -16,11 +16,16 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j"%{max-jobs}"
+    - make -j"${MAXJOBS}"
     - pyppd -v -o fxlinuxprint-ppds .
   install-commands:
     - install -D -m 0755 pstopdffx "%{install-root}/usr/lib/cups/filter/pstopdffx"

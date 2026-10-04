@@ -25,6 +25,11 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/sed.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - |
@@ -37,7 +42,7 @@ config:
           "$wrapper"
       done
     - >-
-      make -j"%{max-jobs}"
+      make -j"${MAXJOBS}"
       foo2zjs zjsdecode arm2hpdl
       foo2hp foo2xqx xqxdecode
       foo2lava lavadecode foo2qpdl qpdldecode opldecode

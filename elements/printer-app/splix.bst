@@ -17,6 +17,11 @@ depends:
   - printer-app/jbigkit.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   # SpliX's threaded page cache shares unlocked state between the cache
   # controller, compression and render threads: under CPU contention
@@ -24,7 +29,7 @@ config:
   # renderer, which emits the same QPDL.
   build-commands:
     - >-
-      make -j"%{max-jobs}" V=1
+      make -j"${MAXJOBS}" V=1
       DISABLE_THREADS=1
       CUPSFILTER="/usr/lib/cups/filter"
       rastertoqpdl_LIBS="-lcupsimage -lcups -ljbig85"
