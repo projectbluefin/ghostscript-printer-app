@@ -62,15 +62,23 @@ class Metadata(unittest.TestCase):
     def test_quadlet_drift_is_corrected_even_when_tag_differs(self):
         # The Quadlet pinned an older release than VERSION; sync must rewrite
         # both occurrences in lockstep so the example matches the documented
-        # version (#82).
+        # version (#82). Seed drift through sync.QUADLET_TAG_RE so the test
+        # stays meaningful after VERSION moves off the literal in the original
+        # Quadlet -- a literal contents.replace("X", "Y") becomes a no-op the
+        # first time the Quadlet stops carrying X.
         quadlet_path = self.root / sync.QUADLET_PATH
-        contents = quadlet_path.read_text()
-        contents = contents.replace("10.07.1-1", "10.05.0-9")
-        quadlet_path.write_text(contents)
+        original = quadlet_path.read_text()
+        drifted = sync.QUADLET_TAG_RE.sub(
+            f"{sync.QUADLET_IMAGE}:9.99.9-99", original, count=2
+        )
+        self.assertNotEqual(drifted, original)
+        quadlet_path.write_text(drifted)
         self.run_sync()
         updated = quadlet_path.read_text()
-        self.assertEqual(updated.count("ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-3"), 2)
-        self.assertNotIn("10.05.0-9", updated)
+        self.assertNotIn("9.99.9-99", updated)
+        version = (self.root / sync.PATHS[0]).read_text().strip()
+        new_tag = f"{sync.QUADLET_IMAGE}:{version}"
+        self.assertEqual(updated.count(new_tag), 2)
 
     def test_quadlet_without_two_image_tags_is_rejected(self):
         # Drift between Image= and ExecStartPre= would break the verifier and

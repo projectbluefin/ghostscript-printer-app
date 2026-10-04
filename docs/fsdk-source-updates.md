@@ -12,8 +12,8 @@ For each changed base commit, the updater reads both nested source pins with
 BuildStream's `show --format '%{source-info}'`, as the appliance parity gate
 already does. Exact tagged releases are required; an unrecognized source format
 or an offset from a release fails before proposal credentials are minted.
-`VERSION`, the README invocation, IJS's matching Ghostscript source, and the OCI
-FSDK labels are updated together. An unchanged Ghostscript version increments
+`VERSION`, the README invocation, IJS's matching Ghostscript source, the OCI
+FSDK labels, and the rootless USB Quadlet example are updated together. An unchanged Ghostscript version increments
 the packaging revision, including a shared-base-only change; a new Ghostscript
 version resets it to `-1`. Each daily proposal starts from `testing`, so rerunning
 an unmerged proposal does not repeatedly increment its revision. The OCI

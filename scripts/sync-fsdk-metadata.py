@@ -9,9 +9,9 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 FSDK = "fsdk-containers.bst:freedesktop-sdk.bst"
 # `examples/ghostscript-printer-app-usb.container` carries the published OCI
-# tag in two places (Image= and the `ExecStartPre=` argument). The Quadlet is
-# derived from VERSION here so a release-bump never publishes a tag the example
-# cannot pull (#82).
+# tag in two places (Image= and the `ExecStartPre=` argument). The Quadlet
+# tracks VERSION, so the example never references a tag the appliance has not
+# yet published (#82).
 PATHS = ("VERSION", "elements/printer-app/ijs.bst",
          "elements/oci/ghostscript-printer-app.bst", "README.md",
          "examples/ghostscript-printer-app-usb.container")
