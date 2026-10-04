@@ -8,8 +8,18 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 FSDK = "fsdk-containers.bst:freedesktop-sdk.bst"
+# `examples/ghostscript-printer-app-usb.container` carries the published OCI
+# tag in two places (Image= and the `ExecStartPre=` argument). The Quadlet is
+# derived from VERSION here so a release-bump never publishes a tag the example
+# cannot pull (#82).
 PATHS = ("VERSION", "elements/printer-app/ijs.bst",
-         "elements/oci/ghostscript-printer-app.bst", "README.md")
+         "elements/oci/ghostscript-printer-app.bst", "README.md",
+         "examples/ghostscript-printer-app-usb.container")
+QUADLET_PATH = "examples/ghostscript-printer-app-usb.container"
+QUADLET_IMAGE = "ghcr.io/projectbluefin/ghostscript-printer-app"
+QUADLET_TAG_RE = re.compile(
+    re.escape(QUADLET_IMAGE) + r":[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*"
+)
 
 
 def release(info, url, prefix):
@@ -70,6 +80,17 @@ def synchronize(root, old, new, fsdk_info, gs_info):
                       rf"\g<1>'{value}'")
     updates[PATHS[2]] = oci
     updates["README.md"] = replace(originals["README.md"], r"^version=[0-9].*$", f"version={version}")
+    # The Quadlet example pins the OCI tag in both Image= and ExecStartPre=
+    # (`tests/rootless-usb.py` already enforces both lines agree on the same
+    # value). Replace every occurrence so a release-bump cannot leave the
+    # example referencing an older appliance than VERSION documents (#82).
+    quadlet, count = QUADLET_TAG_RE.subn(f"{QUADLET_IMAGE}:{version}", originals[QUADLET_PATH])
+    if count != 2:
+        raise ValueError(
+            f"expected exactly two image tags in {QUADLET_PATH} "
+            f"(Image= and ExecStartPre=); found {count}"
+        )
+    updates[QUADLET_PATH] = quadlet
     # Validate all fields before writing; restore on a failed write as well.
     try:
         for name, contents in updates.items():

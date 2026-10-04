@@ -43,6 +43,9 @@ class Metadata(unittest.TestCase):
         self.assertIn("version=10.07.1-3", (self.root / "README.md").read_text())
         self.assertIn("'27.08.1'", (self.root / sync.PATHS[2]).read_text())
         self.assertIn("'" + "a" * 40 + "'", (self.root / sync.PATHS[2]).read_text())
+        quadlet = (self.root / sync.QUADLET_PATH).read_text()
+        self.assertIn("Image=ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-3", quadlet)
+        self.assertIn("check-rootless-usb.py ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-3 ", quadlet)
 
     def test_new_ghostscript_resets_revision_and_synchronizes_ijs(self):
         self.gs = self.gs.replace("10.07.1", "10.08.0")
@@ -52,6 +55,36 @@ class Metadata(unittest.TestCase):
         self.assertIn("track: ghostpdl-10.08.0", ijs)
         self.assertIn("ref: ghostpdl-10.08.0-0-g" + "a" * 40, ijs)
         self.assertIn("version=10.08.0-1", (self.root / "README.md").read_text())
+        quadlet = (self.root / sync.QUADLET_PATH).read_text()
+        self.assertIn("Image=ghcr.io/projectbluefin/ghostscript-printer-app:10.08.0-1", quadlet)
+        self.assertIn("check-rootless-usb.py ghcr.io/projectbluefin/ghostscript-printer-app:10.08.0-1 ", quadlet)
+
+    def test_quadlet_drift_is_corrected_even_when_tag_differs(self):
+        # The Quadlet pinned an older release than VERSION; sync must rewrite
+        # both occurrences in lockstep so the example matches the documented
+        # version (#82).
+        quadlet_path = self.root / sync.QUADLET_PATH
+        contents = quadlet_path.read_text()
+        contents = contents.replace("10.07.1-1", "10.05.0-9")
+        quadlet_path.write_text(contents)
+        self.run_sync()
+        updated = quadlet_path.read_text()
+        self.assertEqual(updated.count("ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-3"), 2)
+        self.assertNotIn("10.05.0-9", updated)
+
+    def test_quadlet_without_two_image_tags_is_rejected(self):
+        # Drift between Image= and ExecStartPre= would break the verifier and
+        # the documented behavior; fail closed so the drift cannot slip
+        # through metadata synchronization.
+        quadlet_path = self.root / sync.QUADLET_PATH
+        contents = quadlet_path.read_text()
+        lines = [line for line in contents.splitlines()
+                 if "ExecStartPre=" not in line]
+        quadlet_path.write_text("\n".join(lines) + "\n")
+        before = {name: (self.root / name).read_bytes() for name in sync.PATHS}
+        with self.assertRaisesRegex(ValueError, "exactly two image tags"):
+            self.run_sync()
+        self.assertEqual(before, {name: (self.root / name).read_bytes() for name in sync.PATHS})
 
     def test_malformed_metadata_leaves_all_files_unchanged(self):
         path = self.root / sync.PATHS[2]

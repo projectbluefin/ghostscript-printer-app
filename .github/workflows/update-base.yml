@@ -218,7 +218,8 @@ jobs:
 
           git switch --create "$branch"
           git add elements/fsdk-containers.bst VERSION elements/printer-app/ijs.bst \
-            elements/oci/ghostscript-printer-app.bst README.md
+            elements/oci/ghostscript-printer-app.bst README.md \
+            examples/ghostscript-printer-app-usb.container
           git commit --signoff -m "$title"
 
           if [[ -n "$remote_head" ]]; then
