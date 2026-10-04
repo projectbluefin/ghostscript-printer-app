@@ -201,3 +201,6 @@ sbom:
                 --deps all \
                 --output /src/ghostscript-printer-app.spdx.json
         '
+
+verify-promote-context-mapping:
+    python3 tests/promote-context-mapping.py
