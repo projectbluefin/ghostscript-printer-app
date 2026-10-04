@@ -154,8 +154,11 @@ jobs:
         id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ secrets.MERGERAPTOR_APP_ID }}
+          app-id: ${{ secrets.MERGERAPTOR_APP_ID }}
           private-key: ${{ secrets.MERGERAPTOR_PRIVATE_KEY }}
+          # A fork's per-repo installation lookup (GET /repos/{owner}/{repo}/installation) 404s;
+          # owner: switches to the owner-level lookup, which resolves from a fork (fsdk-containers#331).
+          owner: ${{ github.repository_owner }}
       - name: Propose the update
         if: steps.track.outputs.changed == 'true'
         env:
