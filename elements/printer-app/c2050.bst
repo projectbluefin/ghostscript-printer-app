@@ -14,6 +14,6 @@ build-depends:
 
 config:
   build-commands:
-    - make -j2
+    - make -j"%{max-jobs}"
   install-commands:
     - install -D -m 0755 c2050 "%{install-root}/usr/bin/c2050"

@@ -26,7 +26,7 @@ config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"%{max-jobs}"
     - make INSTROOT="$PWD/stage" install
     - |
       for wrapper in stage/usr/bin/*-wrapper; do

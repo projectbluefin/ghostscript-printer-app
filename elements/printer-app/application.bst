@@ -25,6 +25,6 @@ depends:
 config:
   build-commands:
     - make clean
-    - make -j2 VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg"
+    - make -j"%{max-jobs}" VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg"
   install-commands:
     - make DESTDIR="%{install-root}" VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg" unitdir= install

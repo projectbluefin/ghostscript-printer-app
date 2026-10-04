@@ -14,6 +14,6 @@ config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"%{max-jobs}"
   install-commands:
     - install -D -m 0755 min12xxw "%{install-root}/usr/bin/min12xxw"

@@ -18,7 +18,7 @@ depends:
 config:
   build-commands:
     - cmake -S . -B build -DCMAKE_POLICY_VERSION_MINIMUM=3.5
-    - cmake --build build --target rastertobrlaser -j2
+    - cmake --build build --target rastertobrlaser -j "%{max-jobs}"
   install-commands:
     - install -D -m 0755 build/rastertobrlaser "%{install-root}/usr/lib/cups/filter/rastertobrlaser"
     - install -D -m 0644 build/brlaser.drv "%{install-root}/usr/share/ppd/brlaser.drv"

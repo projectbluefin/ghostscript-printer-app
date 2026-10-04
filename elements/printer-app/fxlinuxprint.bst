@@ -20,7 +20,7 @@ config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"%{max-jobs}"
     - pyppd -v -o fxlinuxprint-ppds .
   install-commands:
     - install -D -m 0755 pstopdffx "%{install-root}/usr/lib/cups/filter/pstopdffx"

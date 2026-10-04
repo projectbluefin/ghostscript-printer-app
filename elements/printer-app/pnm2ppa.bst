@@ -15,7 +15,7 @@ config:
     - sed -i 's/^version[[:space:]]\+0[[:space:]]\+/version 710 /' pnm2ppa.conf
     - autoreconf --force --install
     - ./configure --prefix=/usr --sysconfdir=/var/lib/ghostscript-printer-app/pnm2ppa
-    - make -j2
+    - make -j"%{max-jobs}"
   install-commands:
     - install -D -m 0755 pnm2ppa "%{install-root}/usr/bin/pnm2ppa"
     - install -D -m 0755 calibrate_ppa "%{install-root}/usr/bin/calibrate_ppa"

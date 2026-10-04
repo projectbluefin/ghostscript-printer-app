@@ -19,7 +19,7 @@ config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"%{max-jobs}"
     - pyppd -v -o dymo-ppds ppd
   install-commands:
     - install -D -m 0755 src/lw/raster2dymolw "%{install-root}/usr/lib/cups/filter/raster2dymolw"

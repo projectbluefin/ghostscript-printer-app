@@ -37,7 +37,7 @@ config:
           "$wrapper"
       done
     - >-
-      make -j2
+      make -j"%{max-jobs}"
       foo2zjs zjsdecode arm2hpdl
       foo2hp foo2xqx xqxdecode
       foo2lava lavadecode foo2qpdl qpdldecode opldecode

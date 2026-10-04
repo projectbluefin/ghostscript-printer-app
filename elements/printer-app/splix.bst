@@ -24,7 +24,7 @@ config:
   # renderer, which emits the same QPDL.
   build-commands:
     - >-
-      make -j2 V=1
+      make -j"%{max-jobs}" V=1
       DISABLE_THREADS=1
       CUPSFILTER="/usr/lib/cups/filter"
       rastertoqpdl_LIBS="-lcupsimage -lcups -ljbig85"

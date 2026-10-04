@@ -17,6 +17,6 @@ config:
       while read -r patch_file; do
         patch -p1 < "debian/patches/$patch_file"
       done < debian/patches/series
-    - make -j2
+    - make -j"%{max-jobs}"
   install-commands:
     - install -D -m 0755 cjet "%{install-root}/usr/bin/cjet"

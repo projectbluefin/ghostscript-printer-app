@@ -47,7 +47,7 @@ config:
       --disable-qt4
       --disable-qt5
       --disable-policykit
-    - make -j2 hpijs
+    - make -j"%{max-jobs}" hpijs
     - |
       sed -i \
         -e 's|^home=.*|home=/usr/share/hplip|' \

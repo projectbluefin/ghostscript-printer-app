@@ -24,7 +24,7 @@ config:
   build-commands:
     - autoreconf --force --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"%{max-jobs}"
     - |
       mkdir ppd
       cp HP-Color_LaserJet_3550-pxljr.ppd ppd/

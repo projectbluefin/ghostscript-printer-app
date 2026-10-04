@@ -13,6 +13,6 @@ build-depends:
 config:
   build-commands:
     - sed -i 's/^CFLAGS = /CFLAGS = -std=gnu89 /' Makefile.unix
-    - make -f Makefile.unix -j2 psnup CC=cc PAPER=a4
+    - make -f Makefile.unix -j"%{max-jobs}" psnup CC=cc PAPER=a4
   install-commands:
     - install -D -m 0755 psnup "%{install-root}/usr/bin/psnup"

@@ -26,6 +26,8 @@ config:
   build-commands:
     - ./make_configure
     - PERL_INSTALLDIRS=vendor ./configure --prefix=/usr --libdir="%{libdir}"
+    # Serial on purpose: lib/Makefile (Makefile.PL) races makeDefaults'
+    # lib/Foomatic/Defaults.pm under -jN, and there is nothing to compile.
     - make -j1
   install-commands:
     - make DESTDIR="$PWD/full-install" install
