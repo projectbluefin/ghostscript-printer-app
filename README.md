@@ -478,7 +478,7 @@ see the [Snap parity matrix](docs/snap-parity-matrix.md).
 
 Merge-queue CI restores BuildStream's local cache (`cas`, `artifacts`,
 `source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
-rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache fails the refill); reset it with `gh cache delete --all`.
+rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache skips the save with a warning and the run stays green); reset it with `gh cache delete --all`.
 
 ### Development and releases
 
