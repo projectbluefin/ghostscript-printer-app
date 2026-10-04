@@ -12,10 +12,9 @@ FSDK = "fsdk-containers.bst:freedesktop-sdk.bst"
 # tag in two places (Image= and the `ExecStartPre=` argument). The Quadlet
 # tracks VERSION, so the example never references a tag the appliance has not
 # yet published (#82).
-PATHS = ("VERSION", "elements/printer-app/ijs.bst",
-         "elements/oci/ghostscript-printer-app.bst", "README.md",
-         "examples/ghostscript-printer-app-usb.container")
 QUADLET_PATH = "examples/ghostscript-printer-app-usb.container"
+PATHS = ("VERSION", "elements/printer-app/ijs.bst",
+         "elements/oci/ghostscript-printer-app.bst", "README.md", QUADLET_PATH)
 QUADLET_IMAGE = "ghcr.io/projectbluefin/ghostscript-printer-app"
 QUADLET_TAG_RE = re.compile(
     re.escape(QUADLET_IMAGE) + r":[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*"
