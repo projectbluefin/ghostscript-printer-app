@@ -25,17 +25,22 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j"%{max-jobs}" rastertoptch generated/stamp-h1
+    - make -j"${MAXJOBS}" rastertoptch generated/stamp-h1
     - |
       cp -a /usr/share/foomatic "$PWD/foomatic-db"
       cp -a generated/. foomatic-db/db/source/
       printf '#\n' > foomatic-db/db/oldprinterids
       FOOMATICDB="$PWD/foomatic-db" \
-        foomatic-compiledb -j "%{max-jobs}" -t ppd -d ppd ptouch-pt ptouch-ql
+        foomatic-compiledb -j "${MAXJOBS}" -t ppd -d ppd ptouch-pt ptouch-ql
       pyppd -v -o ptouch-ppds ppd
   install-commands:
     - install -D -m 0755 rastertoptch "%{install-root}/usr/lib/cups/filter/rastertoptch"

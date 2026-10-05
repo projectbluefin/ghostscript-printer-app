@@ -22,12 +22,17 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/cups-filters.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/zlib.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - patch -p1 < patches/c2esp-libcupsfilters2-api.patch
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"${MAXJOBS}"
   install-commands:
     - install -D -m 0755 src/c2esp "%{install-root}/usr/lib/cups/filter/c2esp"
     - install -D -m 0755 src/c2espC "%{install-root}/usr/lib/cups/filter/c2espC"

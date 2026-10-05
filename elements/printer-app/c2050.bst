@@ -12,8 +12,13 @@ sources:
 build-depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
-    - make -j2
+    - make -j"${MAXJOBS}"
   install-commands:
     - install -D -m 0755 c2050 "%{install-root}/usr/bin/c2050"

@@ -10,9 +10,14 @@ sources:
 build-depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - sed -i 's/^CFLAGS = /CFLAGS = -std=gnu89 /' Makefile.unix
-    - make -f Makefile.unix -j2 psnup CC=cc PAPER=a4
+    - make -f Makefile.unix -j"${MAXJOBS}" psnup CC=cc PAPER=a4
   install-commands:
     - install -D -m 0755 psnup "%{install-root}/usr/bin/psnup"

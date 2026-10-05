@@ -11,12 +11,17 @@ build-depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-make.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/patch.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - |
       while read -r patch_file; do
         patch -p1 < "debian/patches/$patch_file"
       done < debian/patches/series
-    - make -j2
+    - make -j"${MAXJOBS}"
   install-commands:
     - install -D -m 0755 cjet "%{install-root}/usr/bin/cjet"

@@ -356,7 +356,7 @@ there is no `latest`, `edge`, or `stable` OCI tag.
 Install Podman with a working rootless user namespace, then select an explicit release:
 
 ```sh
-version=10.07.1-2
+version=10.07.1-3
 image="ghcr.io/projectbluefin/ghostscript-printer-app:${version}"
 podman pull "$image"
 podman volume create ghostscript-printer-app
@@ -478,7 +478,7 @@ see the [Snap parity matrix](docs/snap-parity-matrix.md).
 
 Merge-queue CI restores BuildStream's local cache (`cas`, `artifacts`,
 `source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
-rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache fails the refill); reset it with `gh cache delete --all`.
+rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache skips the save with a warning and the run stays green); reset it with `gh cache delete --all`.
 
 ### Development and releases
 

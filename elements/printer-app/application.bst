@@ -22,9 +22,14 @@ depends:
   - fsdk-containers.bst:printing/pappl-retrofit.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - make clean
-    - make -j2 VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg"
+    - make -j"${MAXJOBS}" VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg"
   install-commands:
     - make DESTDIR="%{install-root}" VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg" unitdir= install

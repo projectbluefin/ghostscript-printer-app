@@ -15,11 +15,16 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/cups.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:components/python3.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"${MAXJOBS}"
     - pyppd -v -o dymo-ppds ppd
   install-commands:
     - install -D -m 0755 src/lw/raster2dymolw "%{install-root}/usr/lib/cups/filter/raster2dymolw"

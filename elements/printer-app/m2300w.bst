@@ -22,11 +22,16 @@ depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:components/sed.bst
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/runtime-gnu.bst
 
+environment:
+  MAXJOBS: "%{max-jobs}"
+environment-nocache:
+  - MAXJOBS
+
 config:
   build-commands:
     - autoreconf --install
     - ./configure --prefix=/usr
-    - make -j2
+    - make -j"${MAXJOBS}"
     - make INSTROOT="$PWD/stage" install
     - |
       for wrapper in stage/usr/bin/*-wrapper; do
