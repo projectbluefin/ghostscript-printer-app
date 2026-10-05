@@ -1,7 +1,10 @@
 name: CI
 
 on:
-  pull_request: {}
+  pull_request:
+    branches: [testing, stable]
+  push:
+    branches: [testing]
   merge_group:
   workflow_dispatch:
 concurrency:
