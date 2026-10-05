@@ -10,8 +10,9 @@ ROOT = Path(__file__).resolve().parents[1]
 FSDK = "fsdk-containers.bst:freedesktop-sdk.bst"
 # `examples/ghostscript-printer-app-usb.container` carries the published OCI
 # tag in two places (Image= and the `ExecStartPre=` argument). The Quadlet
-# tracks VERSION, so the example never references a tag the appliance has not
-# yet published (#82).
+# tracks VERSION, so a release-bump PR moves both the application version
+# and the referenced appliance tag together; reviewers can spot any forward
+# reference to an un-published tag at PR time (#82).
 QUADLET_PATH = "examples/ghostscript-printer-app-usb.container"
 PATHS = ("VERSION", "elements/printer-app/ijs.bst",
          "elements/oci/ghostscript-printer-app.bst", "README.md", QUADLET_PATH)
