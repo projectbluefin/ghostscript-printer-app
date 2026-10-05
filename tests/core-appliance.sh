@@ -422,17 +422,13 @@ assert_container_log "$large_output_name" "padding-line-0600"
 assert_container_log "$large_output_name" "END_LARGE_OUTPUT"
 assert_container_log_absent "$large_output_name" "NONEXISTENT_MARKER"
 
-# Safely verify that assertion helpers reject violations without tripping top-level traps
-subshell_passed=0
-(
-  trap - ERR EXIT
-  set +e
-  assert_container_log "$large_output_name" "MISSING_LARGE_STRING" >/dev/null 2>&1 && exit 1
-  assert_container_log_absent "$large_output_name" "BEGIN_LARGE_OUTPUT" >/dev/null 2>&1 && exit 1
-  exit 0
-) && subshell_passed=1
-if [[ "$subshell_passed" -ne 1 ]]; then
-  printf 'FAIL: assertion helpers did not reject invalid conditions\n' >&2
+# Verify assertion helpers reject invalid conditions without tripping top-level traps
+if (trap - ERR EXIT; assert_container_log "$large_output_name" "MISSING_LARGE_STRING" >/dev/null 2>&1); then
+  printf 'FAIL: assert_container_log accepted missing string\n' >&2
+  exit 1
+fi
+if (trap - ERR EXIT; assert_container_log_absent "$large_output_name" "BEGIN_LARGE_OUTPUT" >/dev/null 2>&1); then
+  printf 'FAIL: assert_container_log_absent accepted present string\n' >&2
   exit 1
 fi
 
