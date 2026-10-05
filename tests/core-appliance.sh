@@ -408,17 +408,34 @@ podman stop --time 15 "$no_web_name" >/dev/null
 # Verify that log assertions safely handle container output exceeding a standard
 # 64 KiB pipe buffer without SIGPIPE (exit 141) under pipefail for both positive
 # and negative matches against the actual image container.
-podman run --name "$large_output_name" "$image" /usr/bin/bash -c '
+podman rm --force --ignore "$large_output_name" >/dev/null 2>&1 || true
+podman run --name "$large_output_name" --entrypoint /usr/bin/bash "$image" -c '
   printf "BEGIN_LARGE_OUTPUT\n"
   for i in $(seq 1 1200); do
     printf "padding-line-%04d-0123456789abcdef0123456789abcdef0123456789abcdef\n" "$i"
   done
   printf "END_LARGE_OUTPUT\n"
 ' >/dev/null
+
 assert_container_log "$large_output_name" "BEGIN_LARGE_OUTPUT"
 assert_container_log "$large_output_name" "padding-line-0600"
 assert_container_log "$large_output_name" "END_LARGE_OUTPUT"
 assert_container_log_absent "$large_output_name" "NONEXISTENT_MARKER"
+
+# Safely verify that assertion helpers reject violations without tripping top-level traps
+subshell_passed=0
+(
+  trap - ERR EXIT
+  set +e
+  assert_container_log "$large_output_name" "MISSING_LARGE_STRING" >/dev/null 2>&1 && exit 1
+  assert_container_log_absent "$large_output_name" "BEGIN_LARGE_OUTPUT" >/dev/null 2>&1 && exit 1
+  exit 0
+) && subshell_passed=1
+if [[ "$subshell_passed" -ne 1 ]]; then
+  printf 'FAIL: assertion helpers did not reject invalid conditions\n' >&2
+  exit 1
+fi
+
 podman rm "$large_output_name" >/dev/null
 
 printf 'OK: core FSDK Printer Application passed lifecycle verification\n'
