@@ -8,6 +8,7 @@ invalid_name="ghostscript-printer-app-invalid-port"
 state_failure_name="ghostscript-printer-app-state-failure"
 no_web_name="ghostscript-printer-app-no-web-interface"
 rejected_name="ghostscript-printer-app-rejected-setting"
+large_output_name="ghostscript-printer-app-large-log"
 port="${PORT:-18000}"
 failure_port="$((port + 1))"
 no_web_port="$((port + 2))"
@@ -50,7 +51,7 @@ cleanup() {
   local status=$?
   trap - ERR
   ((status == 0)) || dump_diagnostics
-  podman rm --force --ignore "$name" "$failure_name" "$invalid_name" "$state_failure_name" "$no_web_name" "$rejected_name" >/dev/null 2>&1 || true
+  podman rm --force --ignore "$name" "$failure_name" "$invalid_name" "$state_failure_name" "$no_web_name" "$rejected_name" "$large_output_name" >/dev/null 2>&1 || true
   if [[ -n "$no_web_sink_pid" ]]; then
     kill "$no_web_sink_pid" >/dev/null 2>&1 || true
     wait "$no_web_sink_pid" 2>/dev/null || true
@@ -131,6 +132,28 @@ expect_rejected_setting() {
   podman rm "$rejected_name" >/dev/null
 }
 
+# Buffer container logs completely before matching to avoid SIGPIPE (exit 141)
+# under pipefail when grep -q exits early while podman logs is streaming.
+assert_container_log() {
+  local container="$1" expected="$2"
+  local logs
+  logs="$(podman logs "$container" 2>&1)"
+  if [[ "$logs" != *"$expected"* ]]; then
+    printf 'FAIL: %s logs do not contain %q\n%s\n' "$container" "$expected" "$logs" >&2
+    exit 1
+  fi
+}
+
+assert_container_log_absent() {
+  local container="$1" unexpected="$2"
+  local logs
+  logs="$(podman logs "$container" 2>&1)"
+  if [[ "$logs" == *"$unexpected"* ]]; then
+    printf 'FAIL: %s logs unexpectedly contain %q\n%s\n' "$container" "$unexpected" "$logs" >&2
+    exit 1
+  fi
+}
+
 check_private_state() {
   if ! podman exec "$1" /usr/bin/bash -c '
     set -euo pipefail
@@ -175,7 +198,7 @@ wait_for_https "$port"
 check_private_state "$name"
 # Without a credential or no-web-interface the web admin is LAN-reachable on
 # host networking; the entrypoint must say so.
-podman logs "$name" 2>&1 | grep -q 'NOTICE: web administration is reachable'
+assert_container_log "$name" 'NOTICE: web administration is reachable'
 podman exec "$name" /usr/bin/bash -c '
   set -e
   test "$(id -u):$(id -g)" = 65532:65532
@@ -310,10 +333,7 @@ if [[ "$invalid_status" -ne 64 ]]; then
   printf 'FAIL: invalid PORT exited %s instead of 64\n' "$invalid_status" >&2
   exit 1
 fi
-if ! podman logs "$invalid_name" 2>&1 | grep -q 'PORT must be numeric'; then
-  printf 'FAIL: invalid PORT diagnostic missing\n' >&2
-  exit 1
-fi
+assert_container_log "$invalid_name" 'PORT must be numeric'
 
 # Web administration knobs (ChairLift ADR-0016). Malformed or unsupported
 # values fail closed instead of starting an unauthenticated web admin.
@@ -353,10 +373,7 @@ if [[ "$ready" -ne 1 ]]; then
   printf 'FAIL: listener did not answer (with 404) after starting with no-web-interface\n' >&2
   exit 1
 fi
-if podman logs "$no_web_name" 2>&1 | grep -q 'NOTICE: web administration is reachable'; then
-  printf 'FAIL: entrypoint warned about reachable web administration although it was disabled\n' >&2
-  exit 1
-fi
+assert_container_log_absent "$no_web_name" 'NOTICE: web administration is reachable'
 podman exec "$no_web_name" ghostscript-printer-app \
   -u "$no_web_system_uri" \
   -d no-web-test \
@@ -387,5 +404,21 @@ wait "$no_web_sink_pid"
 no_web_sink_pid=""
 python3 -c 'import pathlib, sys; assert pathlib.Path(sys.argv[1]).read_bytes().startswith(b"\x1b%-12345X")' "$no_web_output"
 podman stop --time 15 "$no_web_name" >/dev/null
+
+# Verify that log assertions safely handle container output exceeding a standard
+# 64 KiB pipe buffer without SIGPIPE (exit 141) under pipefail for both positive
+# and negative matches against the actual image container.
+podman run --name "$large_output_name" "$image" /usr/bin/bash -c '
+  printf "BEGIN_LARGE_OUTPUT\n"
+  for i in $(seq 1 1200); do
+    printf "padding-line-%04d-0123456789abcdef0123456789abcdef0123456789abcdef\n" "$i"
+  done
+  printf "END_LARGE_OUTPUT\n"
+' >/dev/null
+assert_container_log "$large_output_name" "BEGIN_LARGE_OUTPUT"
+assert_container_log "$large_output_name" "padding-line-0600"
+assert_container_log "$large_output_name" "END_LARGE_OUTPUT"
+assert_container_log_absent "$large_output_name" "NONEXISTENT_MARKER"
+podman rm "$large_output_name" >/dev/null
 
 printf 'OK: core FSDK Printer Application passed lifecycle verification\n'
