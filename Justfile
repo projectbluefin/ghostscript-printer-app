@@ -54,6 +54,7 @@ validate:
     just verify-promote-context-mapping
     just verify-fsdk-metadata
     python3 tests/test_issue_policy.py
+    just verify-update-base-proposal
     python3 tests/snap-parity-matrix.py
     just bst show --deps all oci/ghostscript-printer-app.bst
 
@@ -144,6 +145,11 @@ verify-discovery:
 
 verify-rootless-usb:
     python3 tests/rootless-usb.py
+
+# Host-only: runs update-base.yml's "Propose the update" step, as written in
+# the workflow, against throwaway git repositories and a stubbed gh.
+verify-update-base-proposal:
+    python3 tests/update-base-proposal.py
 
 # Host-only: the entrypoint must reject malformed web-administration settings
 # before it touches the image or persistent state.
