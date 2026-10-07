@@ -4,6 +4,10 @@ Prow drives issues and pull requests in this repository. Labels are set with `/`
 comment, not by hand. See
 [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md).
 
+Exception: `needs-human` has no Prow command and no bot removes it here. Issue templates add it;
+a maintainer removes it by hand in the GitHub UI once an issue is accepted and agent-eligible.
+This overrides the "let the bot do it" note in the linked workflow doc for this repository.
+
 The skills speak in terms of five canonical triage roles. On
 `projectbluefin/ghostscript-printer-app` they map to these labels:
 
