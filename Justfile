@@ -55,6 +55,7 @@ validate:
     just verify-fsdk-metadata
     python3 tests/test_issue_policy.py
     python3 tests/snap-parity-matrix.py
+    just verify-release-metadata
     just bst show --deps all oci/ghostscript-printer-app.bst
 
 fetch:
@@ -203,6 +204,11 @@ sbom:
                 --deps all \
                 --output /src/ghostscript-printer-app.spdx.json
         '
+
+# Host-only: runs registry-actions.yml's release tag-and-metadata gate, as
+# written in the workflow, against throwaway git repositories.
+verify-release-metadata:
+    python3 tests/release-metadata.py
 
 verify-promote-context-mapping:
     python3 tests/promote-context-mapping.py
