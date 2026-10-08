@@ -9,7 +9,7 @@ Issues and PRDs live as GitHub Issues on this repository. See
 
 ### Issues, pull requests and labels
 
-Prow drives issues and pull requests: `/` commands in comments set labels, reviewers and approvals, and Prow merges through the merge queue on `lgtm` + `approved` (approvers come from `OWNERS`). See [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md). Skill triage roles map to labels in `docs/agents/triage-labels.md`.
+Prow drives issues and pull requests: `/` commands in comments set labels, reviewers and approvals, and Prow merges through the merge queue on `lgtm` + `approved` (approvers come from `OWNERS`). See [Prow commands](https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/commands.md). Repository label overrides live in `.github/prow.yaml`; skill triage roles map to Prow actions and assignment in `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
