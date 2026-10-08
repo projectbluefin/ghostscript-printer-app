@@ -9,8 +9,8 @@ second copy of a ticket in `.scratch/`.
 
 - One feature per issue; link related issues and reference the parent epic
   (`#12`) and the program suite (`projectbluefin/common#1209`) where relevant.
-- Record triage state as a label (see `docs/agents/triage-labels.md`) and an
-  `assignees:` field on the issue.
+- Record triage state as a label, set with a Prow `/` command (see
+  `docs/agents/triage-labels.md`), and an `assignees:` field on the issue.
 - Comments and conversation history happen in the issue thread.
 
 ## Skill operations

@@ -7,9 +7,9 @@
 Issues and PRDs live as GitHub Issues on this repository. See
 `docs/agents/issue-tracker.md`.
 
-### Triage labels
+### Issues, pull requests and labels
 
-Canonical triage labels are used unchanged. See `docs/agents/triage-labels.md`.
+Prow drives issues and pull requests: `/` commands in comments set labels, reviewers and approvals, and Prow merges through the merge queue on `lgtm` + `approved` (approvers come from `OWNERS`). See [how issues and PRs work here](https://github.com/projectbluefin/common/blob/main/docs/skills/label-workflow.md). Skill triage roles map to labels in `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
