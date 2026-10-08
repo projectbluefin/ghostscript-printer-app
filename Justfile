@@ -205,3 +205,4 @@ sbom:
 
 verify-promote-context-mapping:
     python3 tests/promote-context-mapping.py
+    python3 tests/promote-stable-gate.py
