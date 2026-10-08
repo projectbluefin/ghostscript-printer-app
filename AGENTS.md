@@ -9,7 +9,7 @@ Issues and PRDs live as GitHub Issues on this repository. See
 
 ### Issues, pull requests and labels
 
-Prow drives issues and pull requests: `/` commands in comments set labels, reviewers and approvals, and Prow merges through the merge queue on `lgtm` + `approved` (approvers come from `OWNERS`). See [Prow commands](https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/commands.md). Repository label overrides live in `.github/prow.yaml`; skill triage roles map to Prow actions and assignment in `docs/agents/triage-labels.md`.
+Prow drives review and merge commands: `/` commands in comments set labels, reviewers and approvals, and Prow merges through the merge queue on `lgtm` + `approved` (approvers come from `OWNERS`). See [Prow commands](https://github.com/cncf/prow-github-actions/blob/v3.0.1/docs/commands.md). Hive manages contributor work and its metadata labels, including the `needs-human` agent opt-out; do not remove these merely because they are outside Prow's catalog. Repository Prow overrides live in `.github/prow.yaml`; triage roles and the human-only gate are documented in `docs/agents/triage-labels.md`.
 
 ### Domain docs
 
