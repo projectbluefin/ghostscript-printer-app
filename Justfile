@@ -145,9 +145,11 @@ verify-rootless-usb:
     python3 tests/rootless-usb.py
 
 # Host-only: the entrypoint must reject malformed web-administration settings
-# before it touches the image or persistent state.
+# before it touches the image or persistent state, and must launch, supervise
+# and stop its daemons as tests/entrypoint-supervisor.sh specifies.
 verify-entrypoint-validation:
     tests/entrypoint-validation.sh
+    tests/entrypoint-supervisor.sh
 
 verify:
     just verify-rootless-usb
