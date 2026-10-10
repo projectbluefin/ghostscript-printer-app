@@ -84,6 +84,7 @@ set -euo pipefail
 dbus_mode="\$1"
 shift
 server_options=("\$@")
+printf '%s\n' "\$\$" >"\${HARNESS_PID:-/dev/null}"
 source "$work/supervision.sh"
 eval "original_\$(declare -f stop_children)"
 stop_children() { printf 'stop\n' >>"\$CALLS"; original_stop_children; }
@@ -216,9 +217,11 @@ else
   fail "server exiting 0: container exited $status, expected 1"
 fi
 expect_stopped_once 'server exiting 0' dbus-daemon avahi-daemon
-[[ "$(paste -sd, "$case_dir/order")" == ghostscript-printer-app,avahi-daemon,dbus-daemon ]] \
-  && pass 'children are stopped newest first' \
-  || fail "stop order: $(paste -sd, "$case_dir/order"), expected ghostscript-printer-app,avahi-daemon,dbus-daemon"
+if [[ "$(paste -sd, "$case_dir/order")" == ghostscript-printer-app,avahi-daemon,dbus-daemon ]]; then
+  pass 'children are stopped newest first'
+else
+  fail "stop order: $(paste -sd, "$case_dir/order"), expected ghostscript-printer-app,avahi-daemon,dbus-daemon"
+fi
 [[ "$(grep -c -x stop "$case_dir/calls" || true)" == 1 ]] \
   || fail "server exiting 0: stop_children ran $(grep -c -x stop "$case_dir/calls" || true) times, expected 1"
 
@@ -248,20 +251,21 @@ expect_stopped_once 'dbus-daemon exiting 3' avahi-daemon ghostscript-printer-app
 for signal in TERM INT; do
   new_case
   mapfile -t env_lines < <(harness_env)
-  env -i "${env_lines[@]}" SERVER_MODE=run state_dir="$case_dir/state" \
+  env -i "${env_lines[@]}" SERVER_MODE=run state_dir="$case_dir/state" HARNESS_PID="$case_dir/pid" \
     env --default-signal=INT timeout --foreground 30 bash "$work/harness.sh" run 2>"$case_dir/stderr" &
-  harness_pid=$!
+  timeout_pid=$!
   if ! await_ready 3; then
     fail "SIG$signal: children never became ready"
-    builtin kill -KILL "$harness_pid" 2>/dev/null || true
-    wait "$harness_pid" 2>/dev/null || true
+    builtin kill -KILL "$timeout_pid" 2>/dev/null || true
+    wait "$timeout_pid" 2>/dev/null || true
     continue
   fi
-  # timeout --foreground forwards TERM/INT to the harness alone; without it,
-  # timeout also signals its whole process group and the children twice.
-  builtin kill "-$signal" "$harness_pid"
+  # Signal the harness itself, as the runtime signals PID 1. Signalling timeout
+  # would test its forwarding instead: uutils timeout exits 128+signal rather
+  # than with the child's status. timeout only guards against a hang.
+  builtin kill "-$signal" "$(<"$case_dir/pid")"
   set +e
-  wait "$harness_pid"
+  wait "$timeout_pid"
   status=$?
   set -e
   if ((status == 143)); then
