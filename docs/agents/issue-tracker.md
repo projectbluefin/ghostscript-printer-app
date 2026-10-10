@@ -31,9 +31,9 @@ second copy of a ticket in `.scratch/`.
   `stable`. Only a Git tag on `stable` matching `v$(cat VERSION)` publishes a
   release: an immutable application-version GHCR
   multi-architecture index with keyless signature, SPDX SBOM, provenance, and
-  verified OCI referrers. There is **no** `latest`, `edge`, or mutable
-  `stable` OCI tag, and contributors should not open `stable` PRs or publish
-  channel aliases.
+  verified OCI referrers; `stable` then moves to that index. There is **no**
+  `latest` or `edge` OCI tag, and contributors should not open `stable` PRs or
+  publish other channel aliases.
 
 ## Smoke evidence
 
