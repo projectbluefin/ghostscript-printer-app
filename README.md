@@ -347,8 +347,8 @@ it away) and restart the Snap to get it restored.
 
 ## OCI CONTAINER IMAGE
 
-The OCI appliance is published only to the GitHub Container Registry. Every
-verified commit on `testing` gets an immutable `sha-<commit>` tag and moves
+The OCI appliance is published only to the GitHub Container Registry. Each
+published commit on `testing` gets an immutable `sha-<commit>` tag and moves
 `stable` and the application-version tag `<VERSION>` (plus `<VERSION>-x86_64`
 and `<VERSION>-aarch64`) to its signed index; there is no
 `latest` or `edge` OCI tag.
@@ -501,7 +501,9 @@ that same Ghostscript source, and the FSDK version and ref labels come from the
 fsdk-containers junction, so a junction bump needs no other change. Only after
 every check passes does it create the immutable `sha-<commit>` tag and move
 `<VERSION>`, `<VERSION>-x86_64`, `<VERSION>-aarch64` and `stable`, so a failed
-publication leaves no tagged, unsigned image. Roll back by reverting the
+publication leaves no tagged, unsigned image. Publications run one at a time;
+pushes that queue behind a running one collapse to the newest, so an
+intermediate commit may have no `sha-<commit>` tag. Roll back by reverting the
 offending PR.
 
 ## BUILDING WITHOUT PACKAGING OR INSTALLATION
