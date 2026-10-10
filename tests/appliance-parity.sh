@@ -31,24 +31,6 @@ print(" ".join(match.group(1).replace(",", " ").split()))
 PY
 )"
 
-# FSDK is pinned by fsdk-containers' own junction; read it from the resolved graph.
-fsdk_source_info="$(just bst show --deps none --format '%{source-info}' fsdk-containers.bst:freedesktop-sdk.bst)"
-read -r fsdk_version fsdk_ref < <(FSDK_SOURCE_INFO="$fsdk_source_info" python3 - <<'PY'
-import os
-import re
-
-match = re.search(
-    r"^- kind: git_repo\n  url: https://gitlab\.com/freedesktop-sdk/freedesktop-sdk\.git\n"
-    r"(?:  .*\n)*?  version: ([0-9a-f]{40})\n(?:  .*\n)*?    tag-name: freedesktop-sdk-(\S+)\n    commit-offset: 0$",
-    os.environ["FSDK_SOURCE_INFO"],
-    re.MULTILINE,
-)
-if match is None:
-    raise SystemExit("FAIL: pinned freedesktop-sdk release is missing")
-print(match.group(2), match.group(1))
-PY
-)
-
 size_bytes="$(podman image inspect "$image" --format '{{.Size}}')"
 if ((size_bytes > size_limit_bytes)); then
   printf 'FAIL: uncompressed image is %s bytes; limit is %s bytes\n' "$size_bytes" "$size_limit_bytes" >&2
@@ -69,10 +51,10 @@ expect_equal source "$(podman image inspect "$image" --format '{{index .Config.L
 expect_equal license "$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.licenses"}}')" Apache-2.0
 application_version="$(podman run --rm --entrypoint /usr/bin/ghostscript-printer-app "$image" --version)"
 expect_equal binary-version "$application_version" "$(< VERSION)"
+# An fsdk-containers bump that moves Ghostscript fails here until
+# `python3 scripts/sync-fsdk-metadata.py` moves VERSION and IJS with it.
 expect_equal ghostscript-version "$(podman run --rm --entrypoint /usr/bin/gs "$image" --version)" "${application_version%-*}"
 expect_equal image-version "$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')" "$application_version"
-expect_equal fsdk-version "$(podman image inspect "$image" --format '{{index .Config.Labels "io.projectbluefin.fsdk.version"}}')" "$fsdk_version"
-expect_equal fsdk-ref "$(podman image inspect "$image" --format '{{index .Config.Labels "io.projectbluefin.fsdk.ref"}}')" "$fsdk_ref"
 
 podman run --rm --user 0:0 --entrypoint /usr/bin/bash \
   -e ADVERTISED_GHOSTSCRIPT_DRIVERS="$advertised_ghostscript_drivers" \

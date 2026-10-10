@@ -86,9 +86,12 @@ install -m 644 scripts/check-rootless-usb.py ~/.local/libexec/
 cp examples/ghostscript-printer-app-usb.container ~/.config/containers/systemd/
 ```
 
-Edit **both** `Image=` and the image argument in `ExecStartPre=` to the same
-immutable `ghcr.io/projectbluefin/ghostscript-printer-app@sha256:...` reference,
-and replace the example node in `ExecStartPre=`. Then run:
+The example follows the moving `stable` tag with `AutoUpdate=registry`, so
+`systemctl --user enable --now podman-auto-update.timer` moves it to each new
+signed publication. For a validation record, instead edit **both** `Image=` and
+the image argument in `ExecStartPre=` to the same immutable
+`ghcr.io/projectbluefin/ghostscript-printer-app@sha256:...` reference and drop
+`AutoUpdate=`. Replace the example node in `ExecStartPre=`. Then run:
 
 ```bash
 systemctl --user daemon-reload

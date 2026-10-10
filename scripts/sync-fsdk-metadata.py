@@ -1,25 +1,19 @@
 #!/usr/bin/env python3
-"""Synchronize application metadata from the resolved, FSDK-owned sources."""
+"""Move VERSION and IJS with the Ghostscript that the fsdk-containers pin resolves.
 
-import argparse
+FSDK labels are derived at publish time, so a junction bump needs no metadata
+change unless it moves Ghostscript; then the appliance parity gate fails until
+this runs.
+"""
+
 import re
 import subprocess
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-FSDK = "fsdk-containers.bst:freedesktop-sdk.bst"
-# `examples/ghostscript-printer-app-usb.container` carries the published OCI
-# tag in two places (Image= and the `ExecStartPre=` argument). The Quadlet
-# tracks VERSION, so a release-bump PR moves both the application version
-# and the referenced appliance tag together; reviewers can spot any forward
-# reference to an un-published tag at PR time (#82).
-QUADLET_PATH = "examples/ghostscript-printer-app-usb.container"
-PATHS = ("VERSION", "elements/printer-app/ijs.bst",
-         "elements/oci/ghostscript-printer-app.bst", "README.md", QUADLET_PATH)
-QUADLET_IMAGE = "ghcr.io/projectbluefin/ghostscript-printer-app"
-QUADLET_TAG_RE = re.compile(
-    re.escape(QUADLET_IMAGE) + r":[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*"
-)
+GHOSTSCRIPT = "fsdk-containers.bst:freedesktop-sdk.bst:components/ghostscript.bst"
+IJS = "elements/printer-app/ijs.bst"
+PATHS = ("VERSION", IJS)
 
 
 def release(info, url, prefix):
@@ -52,12 +46,7 @@ def replace(text, pattern, replacement):
     return updated
 
 
-def synchronize(root, old, new, fsdk_info, gs_info):
-    for commit in (old, new):
-        if not re.fullmatch(r"[0-9a-f]{40}", commit):
-            raise ValueError("base refs must be full commits")
-    fsdk_version, fsdk_ref = release(
-        fsdk_info, "https://gitlab.com/freedesktop-sdk/freedesktop-sdk.git", "freedesktop-sdk-")
+def synchronize(root, gs_info):
     gs_version, gs_ref = release(
         gs_info, "https://github.com/ArtifexSoftware/ghostpdl.git", "ghostpdl-")
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", gs_version):
@@ -67,68 +56,25 @@ def synchronize(root, old, new, fsdk_info, gs_info):
     match = re.fullmatch(r"([0-9]+\.[0-9]+\.[0-9]+)-([1-9][0-9]*)", current)
     if not match:
         raise ValueError("VERSION must be a Ghostscript release plus positive revision")
-    if old == new:
-        raise ValueError("metadata synchronization requires a changed base commit")
-    revision = int(match[2]) + 1 if gs_version == match[1] else 1
-    version = f"{gs_version}-{revision}"
-    updates = {"VERSION": version + "\n"}
-    ijs = replace(originals[PATHS[1]], r"^    track: .+$", f"    track: ghostpdl-{gs_version}")
-    updates[PATHS[1]] = replace(ijs, r"^    ref: .+$", f"    ref: ghostpdl-{gs_version}-0-g{gs_ref}")
-    oci = originals[PATHS[2]]
-    for key, value in (("version", fsdk_version), ("ref", fsdk_ref)):
-        oci = replace(oci, rf"^(\s*'io\.projectbluefin\.fsdk\.{key}': )'[^']+'$",
-                      rf"\g<1>'{value}'")
-    updates[PATHS[2]] = oci
-    updates["README.md"] = replace(originals["README.md"], r"^version=[0-9].*$", f"version={version}")
-    # The Quadlet example pins the OCI tag in both Image= and ExecStartPre=
-    # (`tests/rootless-usb.py` already enforces both lines agree on the same
-    # value). Replace every occurrence so a release-bump cannot leave the
-    # example referencing an older appliance than VERSION documents (#82).
-    quadlet, count = QUADLET_TAG_RE.subn(f"{QUADLET_IMAGE}:{version}", originals[QUADLET_PATH])
-    if count != 2:
-        raise ValueError(
-            f"expected exactly two image tags in {QUADLET_PATH} "
-            f"(Image= and ExecStartPre=); found {count}"
-        )
-    updates[QUADLET_PATH] = quadlet
+    # The packaging revision restarts with each Ghostscript release and is
+    # otherwise only raised by hand.
+    version = current if gs_version == match[1] else f"{gs_version}-1"
+    ijs = replace(originals[IJS], r"^    track: .+$", f"    track: ghostpdl-{gs_version}")
+    updates = {
+        "VERSION": version + "\n",
+        IJS: replace(ijs, r"^    ref: .+$", f"    ref: ghostpdl-{gs_version}-0-g{gs_ref}"),
+    }
     # Validate all fields before writing; restore on a failed write as well.
     try:
         for name, contents in updates.items():
-            (root / name).write_text(contents)
+            if contents != originals[name]:
+                (root / name).write_text(contents)
     except BaseException:
         for name, contents in originals.items():
             (root / name).write_text(contents)
         raise
-    return f"FSDK {fsdk_version} ({fsdk_ref}); Ghostscript {gs_version} ({gs_ref}); application {version}"
-
-
-def upstream_release(url, prefix):
-    """Observe stable upstream tags without making them source inputs."""
-    try:
-        refs = subprocess.check_output(
-            ["git", "ls-remote", "--tags", "--refs", url, f"refs/tags/{prefix}*"],
-            text=True, timeout=60,
-        )
-        versions = re.findall(r"refs/tags/" + re.escape(prefix)
-                              + r"([0-9]+\.[0-9]+(?:\.[0-9]+)?)$", refs, re.MULTILINE)
-        return max(versions, key=lambda v: tuple(map(int, v.split("."))))
-    except (subprocess.SubprocessError, ValueError):
-        return "unknown (upstream lookup failed)"
-
-
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--old", required=True)
-    parser.add_argument("--new", required=True)
-    args = parser.parse_args()
-    print(synchronize(ROOT, args.old, args.new, source_info(FSDK),
-                      source_info(FSDK + ":components/ghostscript.bst")))
-    for label, url, prefix in (
-        ("Upstream FSDK", "https://gitlab.com/freedesktop-sdk/freedesktop-sdk.git", "freedesktop-sdk-"),
-        ("Upstream Ghostscript", "https://github.com/ArtifexSoftware/ghostpdl.git", "ghostpdl-"),
-    ):
-        print(f"{label} latest stable tag: {upstream_release(url, prefix)}")
+    return f"Ghostscript {gs_version} ({gs_ref}); application {version}"
 
 
 if __name__ == "__main__":
-    main()
+    print(synchronize(ROOT, source_info(GHOSTSCRIPT)))

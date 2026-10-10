@@ -347,18 +347,19 @@ it away) and restart the Snap to get it restored.
 
 ## OCI CONTAINER IMAGE
 
-The OCI appliance is published only to the GitHub Container Registry under
-immutable application-version tags. The version is recorded in [`VERSION`](VERSION).
-Each verified release also moves the `stable` tag to its signed index; there is
-no `latest` or `edge` OCI tag.
+The OCI appliance is published only to the GitHub Container Registry. Every
+verified commit on `testing` gets an immutable `sha-<commit>` tag and moves
+`stable` and the application-version tag ([`VERSION`](VERSION), plus
+`<VERSION>-x86_64` and `<VERSION>-aarch64`) to its signed index; there is no
+`latest` or `edge` OCI tag.
 
 ### Run the published image
 
-Install Podman with a working rootless user namespace, then select an explicit release:
+Install Podman with a working rootless user namespace, then run `stable`, or
+pin a `sha-<commit>` tag or digest instead:
 
 ```sh
-version=10.07.1-4
-image="ghcr.io/projectbluefin/ghostscript-printer-app:${version}"
+image="ghcr.io/projectbluefin/ghostscript-printer-app:stable"
 podman pull "$image"
 podman volume create ghostscript-printer-app
 podman run -d \
@@ -468,7 +469,8 @@ and pappl-retrofit come from the shared printing base of
 (`fsdk-containers.bst:printing/base.bst`), junctioned at a pinned commit in
 `elements/fsdk-containers.bst`; FSDK itself comes through that junction. CI
 seeds the base from its cosign-verified `printing-base-devel` bundle, and
-`update-base.yml` proposes junction bumps daily.
+Renovate ([`renovate.json`](renovate.json)) proposes and automerges junction
+bumps to fsdk-containers `main` once the merge queue's full gate passes.
 
 For real hardware, follow the separate
 [USB and network printer validation procedure](docs/oci-physical-validation.md).
@@ -477,30 +479,31 @@ Synthetic CI results are not physical-printer evidence.
 For driver and version differences against the current OpenPrinting Snap,
 see the [Snap parity matrix](docs/snap-parity-matrix.md).
 
-Merge-queue CI restores BuildStream's local cache (`cas`, `artifacts`,
+Merge-queue CI and the publish workflow restore BuildStream's local cache (`cas`, `artifacts`,
 `source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
 rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache skips the save with a warning and the run stays green); reset it with `gh cache delete --all`.
 
 ### Development and releases
 
-Open OCI development PRs against `testing`; `update-base.yml` proposes its daily
-fsdk-containers bumps there too. Pull requests run `just validate`, and the merge
-queue runs the full native amd64 and arm64 build and `just verify` before a change
-lands on `testing`. Use the manually dispatched `promote-stable.yml` workflow with the exact current
-`testing` commit; it rebuilds and verifies both native architectures before
-fast-forwarding `stable`. Retain `main` only while existing feature branches or
-workflows still reference it.
+Open OCI development PRs against `testing`; Renovate's fsdk-containers bumps land
+there too. Pull requests run `just validate`, and the merge queue runs the full
+native amd64 and arm64 build and `just verify` before a change lands on
+`testing`. Retain `main` only while existing feature branches or workflows still
+reference it.
 
-Only a tag on `stable` exactly matching `v$(cat VERSION)` can publish an OCI
-release. The release workflow builds and verifies native amd64 and arm64 images,
-publishes the matching immutable GHCR multi-architecture index, and verifies
-its SPDX SBOM, keyless signatures, GitHub provenance, and OCI metadata. Its only
-mutable alias is `stable`, which moves to the verified index last.
+Every push to `testing` publishes: `registry-actions.yml` rebuilds and verifies
+native amd64 and arm64 images, then pushes, signs (index and both architecture
+manifests), attests and verifies everything by digest, including its SPDX SBOM,
+keyless signatures, GitHub provenance, and OCI metadata. It derives the FSDK
+version and ref labels from the fsdk-containers junction, so a junction bump
+needs no other change. Only after every check passes does it create the
+immutable `sha-<commit>` tag and move `<VERSION>`, `<VERSION>-x86_64`,
+`<VERSION>-aarch64` and `stable`, so a failed publication leaves no tagged,
+unsigned image. Roll back by reverting the offending PR.
 
-The release workflow pushes, signs (index and both architecture manifests),
-attests and verifies everything by digest. It creates the `<VERSION>`,
-`<VERSION>-x86_64` and `<VERSION>-aarch64` tags, then moves `stable`, only after
-every check passes, so a failed release leaves no tagged, unsigned image.
+A junction bump that moves FSDK's Ghostscript fails the appliance parity gate
+until `python3 scripts/sync-fsdk-metadata.py` updates `VERSION` and the IJS
+source on that PR.
 
 ## BUILDING WITHOUT PACKAGING OR INSTALLATION
 

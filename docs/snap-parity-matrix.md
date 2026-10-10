@@ -29,7 +29,7 @@ Ghostscript follows the reviewed FreeDesktop SDK (FSDK) pin instead, per
   junctioned at a pinned commit in `elements/fsdk-containers.bst`) or from the
   FSDK release that junction pins are marked **inherited**; their versions
   below were read from those pinned elements on 2026-09-25 and go stale with
-  the next `update-base.yml` bump.
+  the next Renovate fsdk-containers bump.
 - The Snap Store's currently published revision, architectures, and OCI
   image digest are **unknown** in this document: they are not committed
   artifacts of this repository and must be read from the Snap Store listing
@@ -40,9 +40,9 @@ Ghostscript follows the reviewed FreeDesktop SDK (FSDK) pin instead, per
 
 | Property | This FSDK OCI appliance | OpenPrinting Snap |
 | --- | --- | --- |
-| Application version | see `VERSION` at the repository root — not reproduced here because a daily `update-base.yml`/version bump would make a literal copy stale within a day | `snap/snapcraft.yaml` `version:`, currently `10.08.0-1` (checked into this repo); Snap Store listing revision is unknown here |
+| Application version | see `VERSION` at the repository root — not reproduced here because a version bump would make a literal copy stale | `snap/snapcraft.yaml` `version:`, currently `10.08.0-1` (checked into this repo); Snap Store listing revision is unknown here |
 | Build architectures | `amd64`, `arm64` (see `tests/appliance-parity.sh` architecture cases) | `amd64`, `arm64`, `armhf`, `riscv64` (`snap/snapcraft.yaml` `architectures:`) — `armhf`/`riscv64` are not produced by this repository |
-| FreeDesktop SDK pin | see the `ref:` in `elements/fsdk-containers.bst` (recorded at build time in the `io.projectbluefin.fsdk.*` labels of `elements/oci/ghostscript-printer-app.bst`) — not reproduced here for the same staleness reason | Not applicable; Snap does not use FSDK |
+| FreeDesktop SDK pin | see the `ref:` in `elements/fsdk-containers.bst` (stamped at publish time into the `io.projectbluefin.fsdk.*` image labels) — not reproduced here for the same staleness reason | Not applicable; Snap does not use FSDK |
 | OCI image digest | Produced per build; see release evidence and `org.opencontainers.image.*` labels asserted by `tests/appliance-parity.sh` | Not applicable; Snap has no OCI digest |
 | Uncompressed size ceiling | 500 MiB (524,288,000 bytes), enforced by `tests/appliance-parity.sh` | Not tracked here; unknown |
 
@@ -86,7 +86,7 @@ those pinned elements resolved to when this document was last edited.
 
 ## Keeping the version columns honest
 
-Rather than hand-transcribing values that a daily `update-base.yml` bump or a
+Rather than hand-transcribing values that an automerged Renovate bump or a
 `VERSION` bump would make stale within a day, the rows above that come from
 files subject to automated bumps (the application version, the FreeDesktop
 SDK pin, and every component inherited from the shared fsdk-containers

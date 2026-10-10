@@ -1,0 +1,61 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "local>projectbluefin/renovate-config"
+  ],
+  "forkProcessing": "enabled",
+  "baseBranchPatterns": [
+    "testing"
+  ],
+  "enabledManagers": [
+    "custom.regex",
+    "github-actions"
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "fsdk-containers junction (FSDK and the shared printing base) follows fsdk-containers main",
+      "managerFilePatterns": [
+        "/^elements/fsdk-containers\\.bst$/"
+      ],
+      "matchStrings": [
+        "track: (?<currentValue>main)\\n    ref: (?<currentDigest>[0-9a-f]{40})"
+      ],
+      "depNameTemplate": "https://github.com/projectbluefin/fsdk-containers",
+      "datasourceTemplate": "git-refs"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchManagers": [
+        "github-actions"
+      ],
+      "pinDigests": true,
+      "groupName": "GitHub Actions"
+    },
+    {
+      "description": "BuildStream builds fail on ubuntu-26.04 runners (fsdk-containers#332); keep 24.04",
+      "matchDatasources": [
+        "github-runners"
+      ],
+      "matchPackageNames": [
+        "ubuntu"
+      ],
+      "allowedVersions": "/^24\\.04(?:-arm)?$/"
+    },
+    {
+      "description": "Land fsdk-containers bumps as soon as the merge queue's full native build and just verify pass; every testing push publishes, so reverting the PR is the rollback",
+      "matchDepNames": [
+        "https://github.com/projectbluefin/fsdk-containers"
+      ],
+      "schedule": [
+        "at any time"
+      ],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true,
+      "ignoreTests": false,
+      "minimumReleaseAge": null
+    }
+  ]
+}

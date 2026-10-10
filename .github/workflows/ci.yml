@@ -1,9 +1,8 @@
 name: CI
 
+# Pushes to testing are rebuilt, verified and published by registry-actions.yml.
 on:
   pull_request: {}
-  push:
-    branches: [testing]
   merge_group:
   workflow_dispatch:
 concurrency:
