@@ -4,7 +4,7 @@
 Description=Ghostscript Printer Application (rootless USB)
 
 [Container]
-Image=ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-3
+Image=ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-4
 ContainerName=ghostscript-printer-app-usb
 Network=host
 User=65532:65532
@@ -15,7 +15,7 @@ Volume=ghostscript-printer-app-usb:/var/lib/ghostscript-printer-app:Z,U
 
 [Service]
 # Replace 001/002 with the connected printer node; it can change on reconnect.
-ExecStartPre=/usr/bin/python3 %h/.local/libexec/check-rootless-usb.py ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-3 /dev/bus/usb/001/002
+ExecStartPre=/usr/bin/python3 %h/.local/libexec/check-rootless-usb.py ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-4 /dev/bus/usb/001/002
 TimeoutStartSec=300
 
 [Install]
