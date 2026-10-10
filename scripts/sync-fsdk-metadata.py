@@ -18,7 +18,7 @@ PATHS = ("VERSION", "elements/printer-app/ijs.bst",
          "elements/oci/ghostscript-printer-app.bst", "README.md", QUADLET_PATH)
 QUADLET_IMAGE = "ghcr.io/projectbluefin/ghostscript-printer-app"
 QUADLET_TAG_RE = re.compile(
-    re.escape(QUADLET_IMAGE) + r":[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*"
+    re.escape(QUADLET_IMAGE) + r":[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*(?![0-9A-Za-z._-])"
 )
 
 

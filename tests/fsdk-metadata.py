@@ -94,6 +94,18 @@ class Metadata(unittest.TestCase):
             self.run_sync()
         self.assertEqual(before, {name: (self.root / name).read_bytes() for name in sync.PATHS})
 
+    def test_quadlet_arch_suffixed_tag_is_rejected(self):
+        # ghcr also publishes arch-suffixed tags; the tag pattern must not
+        # match their numeric prefix and rewrite them to `<new>-aarch64` (#88).
+        # The multi-digit revision catches backtracking into a partial match.
+        quadlet_path = self.root / sync.QUADLET_PATH
+        quadlet_path.write_text(sync.QUADLET_TAG_RE.sub(
+            f"{sync.QUADLET_IMAGE}:10.07.1-13-aarch64", quadlet_path.read_text()))
+        before = {name: (self.root / name).read_bytes() for name in sync.PATHS}
+        with self.assertRaisesRegex(ValueError, "exactly two image tags"):
+            self.run_sync()
+        self.assertEqual(before, {name: (self.root / name).read_bytes() for name in sync.PATHS})
+
     def test_malformed_metadata_leaves_all_files_unchanged(self):
         path = self.root / sync.PATHS[2]
         path.write_text(path.read_text().replace("io.projectbluefin.fsdk.ref", "missing"))
