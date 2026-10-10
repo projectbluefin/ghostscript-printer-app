@@ -67,6 +67,7 @@ def git(cwd, *args):
         ["git", "-c", "user.name=test", "-c", "user.email=test@example.invalid",
          "-c", "init.defaultBranch=stable", "-c", "commit.gpgsign=false", *args],
         cwd=cwd, check=True, capture_output=True, text=True,
+        env={**os.environ, "GIT_CONFIG_GLOBAL": os.devnull, "GIT_CONFIG_NOSYSTEM": "1"},
     ).stdout.strip()
 
 
