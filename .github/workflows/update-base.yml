@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          ref: testing
+          ref: main
           persist-credentials: false
       - uses: taiki-e/install-action@d438492cf8a250514fa2d34b30bc3c0dc37c65ff # v2
         with:
@@ -243,7 +243,7 @@ jobs:
             # the reviewer's open PR once per day for as long as it stays
             # open.
             if [[ -z "$remote_head" ]]; then
-              if existing="$(gh pr list --head "$conflicted_branch" --base testing --state open --json number --jq '.[0].number')" && [[ -n "$existing" ]]; then
+              if existing="$(gh pr list --head "$conflicted_branch" --base main --state open --json number --jq '.[0].number')" && [[ -n "$existing" ]]; then
                 gh pr comment "$existing" --body "A new scheduled fsdk-containers update was proposed on \`$branch\` instead of updating this branch, because this branch has commits not authored and committed by mergeraptor[bot] (a reviewer appears to have amended it). This PR was left untouched to avoid a destructive overwrite."
               fi
             fi
@@ -260,9 +260,9 @@ jobs:
             printf '\nVerified with patch-chain, fetch and full OCI socket-sink gates on x86_64. Physical paper output remains unverified.\n'
             printf '\nSource/cache evidence: https://github.com/%s/actions/runs/%s (fsdk-update-evidence artifact). Native arm64 verification remains a merge-queue gate.\n' "$REPOSITORY" "$GITHUB_RUN_ID"
           } > "$body_file"
-          if existing="$(gh pr list --head "$branch" --base testing --state open --json number --jq '.[0].number')" && [[ -n "$existing" ]]; then
+          if existing="$(gh pr list --head "$branch" --base main --state open --json number --jq '.[0].number')" && [[ -n "$existing" ]]; then
             gh pr edit "$existing" --title "$title" --body-file "$body_file"
             printf 'Updated dependency PR #%s\n' "$existing"
           else
-            gh pr create --base testing --head "$branch" --title "$title" --body-file "$body_file"
+            gh pr create --base main --head "$branch" --title "$title" --body-file "$body_file"
           fi

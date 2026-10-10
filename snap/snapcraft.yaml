@@ -1190,7 +1190,7 @@ parts:
       perl -p -i -e 's:/tmp:\$TMPDIR:' filters/*
       # Create filter installation directory
       mkdir -p $CRAFT_PART_INSTALL/usr/lib/cups/filter/
-      # Correct language in PPD file      
+      # Correct language in PPD file
       perl -p -i -e 's/^(\*LanguageVersion:\s+).*/\1Portuguese/' MFP/OK4X1PSBR.ppd
       # Install the files
       craftctl default

@@ -104,7 +104,7 @@ ghostscript_autoadd(const char *device_info,	// I - Device name (unused)
   if (device_id == NULL || global_data == NULL)
     return (NULL);
 
-  // 
+  //
   // Find the best-matching PPD file to expicitly support our printer model
   if (!((ret = prBestMatchingPPD(device_id, global_data)) != 0 ||
 	// No dedicated support for this model, look at the COMMAND

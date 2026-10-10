@@ -1,5 +1,14 @@
 # AGENTS.md
 
+## Checks and CI
+
+Every change is gated by CI plus a pre-commit hygiene pass:
+
+- **`validate`** (`.github/workflows/validate.yml`): runs `pre-commit run --all-files` on `pull_request` and `merge_group`. Runs `actionlint`, YAML/JSON/toml hygiene, and blocks floating GitHub Action tags — third-party actions must be pinned to a full SHA (`no-floating-action-tags`). This check is required in the `main` ruleset.
+- **Scorecard** (`.github/workflows/scorecard.yml`): OpenSSF Scorecard supply-chain check.
+- **CI** (`.github/workflows/ci.yml`): FSDK appliance build and snap.
+- **`.pre-commit-config.yaml`**: the checks above. Run `pre-commit run --all-files` before every commit.
+
 ## Agent skills
 
 ### Issue tracker
@@ -21,4 +30,4 @@ Before changing the BuildStream/FSDK graph or CUPS integration, read `docs/skill
 
 ### Branches and releases
 
-Target `testing` for fsdk-containers updates and development PRs; promote verified commits to `stable` with `promote-stable.yml`. Pull requests run `just validate`; the merge queue runs the full OCI appliance gate before a change lands on `testing`, and the promotion workflow runs it again before fast-forwarding `stable`. Only version tags on `stable` publish immutable OCI releases. Keep `main` while existing feature branches or workflows still reference it.
+Target `main` for fsdk-containers updates and development PRs; promote verified commits to `stable` with `promote-stable.yml`. Pull requests run `validate` and CI; the merge queue runs the full OCI appliance gate before a change lands on `main`, and the promotion workflow runs it again before fast-forwarding `stable`. Only version tags on `stable` publish immutable OCI releases.
