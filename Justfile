@@ -49,6 +49,7 @@ bst *ARGS:
 
 validate:
     python3 tests/snap-parity-matrix.py
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
     just bst show --deps all oci/ghostscript-printer-app.bst
 
 fetch:

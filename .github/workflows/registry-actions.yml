@@ -43,7 +43,7 @@ jobs:
           fi
           # FSDK comes only through the fsdk-containers junction; read its pin
           # there, so a bare junction bump needs no committed FSDK metadata.
-          junction_ref="$(sed -n 's/^[[:space:]]*ref: \([0-9a-f]\{40\}\)$/\1/p' elements/fsdk-containers.bst)"
+          junction_ref="$(sed -n -E 's/^[[:space:]]*ref: (.*-g)?([0-9a-f]{40})$/\2/p' elements/fsdk-containers.bst)"
           [[ "$junction_ref" =~ ^[0-9a-f]{40}$ ]]
           upstream="$(mktemp -d)"
           trap 'rm -rf "$upstream"' EXIT
