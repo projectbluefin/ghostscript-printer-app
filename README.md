@@ -348,8 +348,9 @@ it away) and restart the Snap to get it restored.
 ## OCI CONTAINER IMAGE
 
 The OCI appliance is published only to the GitHub Container Registry under
-immutable application-version tags. The version is recorded in [`VERSION`](VERSION);
-there is no `latest`, `edge`, or `stable` OCI tag.
+immutable application-version tags. The version is recorded in [`VERSION`](VERSION).
+Each verified release also moves the `stable` tag to its signed index; there is
+no `latest` or `edge` OCI tag.
 
 ### Run the published image
 
@@ -493,13 +494,13 @@ workflows still reference it.
 Only a tag on `stable` exactly matching `v$(cat VERSION)` can publish an OCI
 release. The release workflow builds and verifies native amd64 and arm64 images,
 publishes the matching immutable GHCR multi-architecture index, and verifies
-its SPDX SBOM, keyless signatures, GitHub provenance, and OCI metadata. It
-never publishes a mutable channel alias.
+its SPDX SBOM, keyless signatures, GitHub provenance, and OCI metadata. Its only
+mutable alias is `stable`, which moves to the verified index last.
 
 The release workflow pushes, signs (index and both architecture manifests),
 attests and verifies everything by digest. It creates the `<VERSION>`,
-`<VERSION>-x86_64` and `<VERSION>-aarch64` tags only after every check passes,
-so a failed release leaves no tagged, unsigned image.
+`<VERSION>-x86_64` and `<VERSION>-aarch64` tags, then moves `stable`, only after
+every check passes, so a failed release leaves no tagged, unsigned image.
 
 ## BUILDING WITHOUT PACKAGING OR INSTALLATION
 
