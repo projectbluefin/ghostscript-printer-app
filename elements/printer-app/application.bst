@@ -12,11 +12,12 @@ sources:
     path: ghostscript-printer-app.service
   - kind: local
     path: testpage.ps
-  - kind: local
-    path: VERSION
 
 build-depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+  - filename: printer-app/version.bst
+    config:
+      location: /metadata
 
 depends:
   - fsdk-containers.bst:printing/pappl-retrofit.bst
@@ -30,6 +31,6 @@ environment-nocache:
 config:
   build-commands:
     - make clean
-    - make -j"${MAXJOBS}" VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg"
+    - make -j"${MAXJOBS}" VERSION="$(cat /metadata/VERSION)" LDFLAGS="$LDFLAGS -ljpeg"
   install-commands:
-    - make DESTDIR="%{install-root}" VERSION="$(cat VERSION)" LDFLAGS="$LDFLAGS -ljpeg" unitdir= install
+    - make DESTDIR="%{install-root}" VERSION="$(cat /metadata/VERSION)" LDFLAGS="$LDFLAGS -ljpeg" unitdir= install

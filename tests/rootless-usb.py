@@ -30,9 +30,8 @@ class RootlessUSB(unittest.TestCase):
                           ("User", "--user"), ("Network", "--network")]:
             self.assertEqual(args[args.index(flag) + 1], container[key])
         self.assertIn(container["Image"], config["Service"]["ExecStartPre"])
-        version = (ROOT / "VERSION").read_text().strip()
-        self.assertEqual(container["Image"],
-                         f"ghcr.io/projectbluefin/ghostscript-printer-app:{version}")
+        self.assertEqual(container["Image"], "ghcr.io/projectbluefin/ghostscript-printer-app:stable")
+        self.assertEqual(container["AutoUpdate"], "registry")
         self.assertTrue(config["Service"]["ExecStartPre"].startswith(
             "/usr/bin/python3 %h/.local/libexec/check-rootless-usb.py "))
         self.assertEqual(container["AddDevice"], "/dev/bus/usb")

@@ -47,13 +47,9 @@ bst *ARGS:
         "{{ bst2_image }}" \
         bash -c 'bst "$@"' -- --no-interactive ${BST_FLAGS:-} "${RE_FLAG[@]}" {{ ARGS }}
 
-verify-fsdk-metadata:
-    python3 tests/fsdk-metadata.py
-
 validate:
-    just verify-promote-context-mapping
-    just verify-fsdk-metadata
     python3 tests/snap-parity-matrix.py
+    PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
     just bst show --deps all oci/ghostscript-printer-app.bst
 
 fetch:
@@ -202,6 +198,3 @@ sbom:
                 --deps all \
                 --output /src/ghostscript-printer-app.spdx.json
         '
-
-verify-promote-context-mapping:
-    python3 tests/promote-context-mapping.py

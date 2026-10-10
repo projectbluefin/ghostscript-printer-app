@@ -54,7 +54,7 @@ No failure was demonstrated and none is reachable through the appliance's filter
 ## Future-compatibility and re-audit triggers
 
 - The only serialization patch, fsdk-containers `patches/printing/libcupsfilters/serialize-signed-cups-media-type.patch`, touches only the `cupsMediaType` hunk of `header_to_gs_args()`; the remaining hunks of upstream 318cd5b apply cleanly to the same function with `-p1` and can be added to that one patch file in fsdk-containers if ever needed. Because `%d` serialization is bit-identical for every value below 2^31, pre-applying them would not change behavior for valid inputs — but the evidence discipline for this repository requires an observed failure first, so they stay out.
-- Re-run this audit before adopting an fsdk-containers bump (`update-base.yml`) that changes the libcupsfilters source ref, and additionally when:
+- Re-run this audit before adopting an fsdk-containers bump (Renovate's `elements/fsdk-containers.bst` PR) that changes the libcupsfilters source ref, and additionally when:
   - an appliance chain starts invoking `cfFilterGhostscript` with PWG, Apple, or PCLm raster output formats, or a driver payload PPD targets `image/pwg-raster`;
   - upstream libcupsfilters implements the numeric `TODO` mappings for `cupsMediaType`, `cupsCompression`, `cupsRowCount`, `cupsRowFeed`, or `cupsRowStep` in `cfRasterPrepareHeader()`, which would let PPD numeric choices (including negative HPLIP- and GDI-style sentinels) reach the serialization sites directly;
   - a driver family is added whose filter consumes PWG raster or invokes `cfFilterUniversal`-built chains.

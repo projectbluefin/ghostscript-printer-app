@@ -1,14 +1,15 @@
 kind: manual
-description: Build the standalone IJS library from the FSDK-pinned Ghostscript source.
+description: Build the standalone IJS library from the junction's Ghostscript source.
 
-sources:
-  - kind: git_repo
-    url: github:ArtifexSoftware/ghostpdl.git
-    track: ghostpdl-10.07.1
-    ref: ghostpdl-10.07.1-0-g9a39d68ca934f8e9343f46a2803e765122a3b4a9
+# FSDK's ghostscript element (as patched by fsdk-containers) supplies the
+# ghostpdl source and ref, so IJS always matches the shipped Ghostscript and an
+# fsdk-containers bump moves both. Everything else is overridden below.
+(@): fsdk-containers.bst:freedesktop-sdk.bst:elements/components/ghostscript.bst
 
 build-depends:
   - fsdk-containers.bst:freedesktop-sdk.bst:public-stacks/buildsystem-autotools.bst
+
+depends: []
 
 public:
   bst:
@@ -25,6 +26,7 @@ environment-nocache:
   - MAXJOBS
 
 config:
+  configure-commands: []
   build-commands:
     - cd ijs && autoreconf --force --install && ./configure --prefix=/usr --libdir="%{libdir}" --enable-shared --disable-static
     - make -C ijs -j"${MAXJOBS}"

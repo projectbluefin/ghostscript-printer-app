@@ -21,4 +21,4 @@ Before changing the BuildStream/FSDK graph or CUPS integration, read `docs/skill
 
 ### Branches and releases
 
-Target `testing` for fsdk-containers updates and development PRs; promote verified commits to `stable` with `promote-stable.yml`. Pull requests run `just validate`; the merge queue runs the full OCI appliance gate before a change lands on `testing`, and the promotion workflow runs it again before fast-forwarding `stable`. Only version tags on `stable` publish immutable OCI releases. Keep `main` while existing feature branches or workflows still reference it.
+Target `testing` for development PRs; Renovate proposes and automerges fsdk-containers junction bumps there. Pull requests run `just validate`; the merge queue runs the full OCI appliance gate before a change lands on `testing`. Every push to `testing` rebuilds, re-verifies and publishes the signed image (`registry-actions.yml`): immutable `sha-<commit>`, moving `<VERSION>` and `stable`. Reverting a PR is the rollback. Keep `main` while existing feature branches or workflows still reference it.

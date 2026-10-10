@@ -21,5 +21,5 @@ The OCI appliance supports every driver family and user-visible runtime behavior
 _Avoid_: build parity, package parity
 
 **Application release**:
-An immutable release of the OCI appliance whose version follows the packaged Ghostscript version plus a packaging revision.
+A signed OCI publication of one verified `testing` commit, tagged immutably by commit and carrying the application version: the packaged Ghostscript version plus a packaging revision.
 _Avoid_: FSDK release, latest

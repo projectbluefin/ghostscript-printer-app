@@ -1,12 +1,16 @@
-name: Publish immutable OCI release
+name: Publish signed OCI image
 
+# Every push to testing (only the merge queue lands there, after its full
+# native build and `just verify`) rebuilds, re-verifies and publishes; the
+# publish job needs both verified builds. Reverting a PR is the rollback.
 on:
   push:
-    tags:
-      - "v*"
+    branches: [testing]
+  workflow_dispatch:
 
+# One publication at a time, newest pending wins; never cancel a running one.
 concurrency:
-  group: oci-release-${{ github.ref }}
+  group: oci-publish
   cancel-in-progress: false
 
 permissions: {}
@@ -20,7 +24,6 @@ jobs:
     permissions:
       contents: read
     outputs:
-      version: ${{ steps.release.outputs.version }}
       revision: ${{ steps.release.outputs.revision }}
       created: ${{ steps.release.outputs.created }}
       fsdk_version: ${{ steps.release.outputs.fsdk_version }}
@@ -29,31 +32,27 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-          fetch-depth: 0
-      - name: Validate release tag and metadata
+      - name: Derive release metadata
         id: release
         shell: bash
         run: |
           set -euo pipefail
-          git fetch --no-tags origin +refs/heads/stable:refs/remotes/origin/stable
-          if ! git merge-base --is-ancestor HEAD refs/remotes/origin/stable; then
-            printf 'Release tag %s must point to a commit on stable\n' "$GITHUB_REF_NAME" >&2
+          if [[ "$GITHUB_REF" != refs/heads/testing ]]; then
+            printf 'Publish only from testing, not %s\n' "$GITHUB_REF" >&2
             exit 1
           fi
-          version="$(< VERSION)"
-          if [[ "$GITHUB_REF_NAME" != "v${version}" ]]; then
-            printf 'Tag %s does not match application version v%s\n' "$GITHUB_REF_NAME" "$version" >&2
-            exit 1
-          fi
-          # FSDK comes through fsdk-containers; the image labels record its pin
-          # and tests/appliance-parity.sh checks them against the resolved graph.
-          label() { sed -n "s/^[[:space:]]*'io\.projectbluefin\.fsdk\.$1': '\(.*\)'$/\1/p" elements/oci/ghostscript-printer-app.bst; }
-          fsdk_version="$(label version)"
-          fsdk_ref="$(label ref)"
-          test -n "$fsdk_version"
-          test -n "$fsdk_ref"
+          # FSDK comes only through the fsdk-containers junction; read its pin
+          # there, so a bare junction bump needs no committed FSDK metadata.
+          junction_ref="$(sed -n -E 's/^[[:space:]]*ref: (.*-g)?([0-9a-f]{40})$/\2/p' elements/fsdk-containers.bst)"
+          [[ "$junction_ref" =~ ^[0-9a-f]{40}$ ]]
+          upstream="$(mktemp -d)"
+          trap 'rm -rf "$upstream"' EXIT
+          git -C "$upstream" init -q
+          git -C "$upstream" fetch -q --depth=1 https://github.com/projectbluefin/fsdk-containers.git "$junction_ref"
+          junction="$(git -C "$upstream" show FETCH_HEAD:elements/freedesktop-sdk.bst)"
+          read -r fsdk_version fsdk_ref <<< "$(sed -n 's/^[[:space:]]*ref: freedesktop-sdk-\(.*\)-0-g\([0-9a-f]\{40\}\)$/\1 \2/p' <<< "$junction")"
+          [[ -n "$fsdk_version" && "$fsdk_ref" =~ ^[0-9a-f]{40}$ ]]
           {
-            echo "version=$version"
             echo "revision=$(git rev-parse HEAD)"
             echo "created=$(git show -s --format=%cI HEAD)"
             echo "fsdk_version=$fsdk_version"
@@ -77,6 +76,7 @@ jobs:
     permissions:
       contents: read
     env:
+      CACHE_PREFIX: bst-v1-${{ matrix.arch }}-
       BST_FLAGS: --config /src/ci/buildstream.conf
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -86,14 +86,76 @@ jobs:
         with:
           tool: just
       - name: Install host dependencies
-        run: sudo apt-get update && sudo apt-get install --yes fuse3 podman
+        run: sudo apt-get update && sudo apt-get install --yes fuse3 podman skopeo jq
+      - name: Compute BuildStream cache key
+        id: cache-key
+        env:
+          INPUTS_HASH: ${{ hashFiles('project.conf', 'elements/**', 'include/**', 'patches/**', 'files/**', 'Makefile', 'ghostscript-printer-app.c', 'ghostscript-printer-app.1', 'ghostscript-printer-app.service', 'testpage.ps', 'VERSION') }}
+        run: echo "inputs=${CACHE_PREFIX}${INPUTS_HASH}-" >> "$GITHUB_OUTPUT"
+      - name: Restore BuildStream cache
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            ~/.cache/buildstream/cas
+            ~/.cache/buildstream/artifacts
+            ~/.cache/buildstream/source_protos
+          key: ${{ steps.cache-key.outputs.inputs }}${{ github.run_id }}
+          restore-keys: |
+            ${{ steps.cache-key.outputs.inputs }}
+            ${{ env.CACHE_PREFIX }}
+      - name: Install cosign
+        continue-on-error: true
+        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
+      # Seed printing/base.bst from the signed printing-base-devel bundle
+      # (fsdk-containers docs/skills/printing-base.md, rule 4). Never fails
+      # the job: any error falls through to a local build of the base.
+      - name: Seed printing base
+        continue-on-error: true
+        env:
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -uo pipefail
+          base=fsdk-containers.bst:printing/base.bst
+          show() {
+            just bst -o arch "$ARCH" show --deps none --format "$1" "$base" 2>/dev/null |
+              tail -n 1 | sed 's/\x1b\[[0-9;]*m//g'
+          }
+          KEY="$(show '%{full-key}')"
+          if [[ ! "$KEY" =~ ^[0-9a-f]{64}$ ]]; then
+            echo "::warning::printing base: cannot compute the ${ARCH} key; building it locally"
+            exit 0
+          fi
+          if [[ "$(show '%{state}')" == cached ]]; then
+            echo "printing base ${ARCH}-${KEY} is already cached"
+            exit 0
+          fi
+          if ! ARCH="$ARCH" KEY="$KEY" bash -euo pipefail <<'SEED'
+          REPO=ghcr.io/projectbluefin/printing-base-devel
+          DIGEST="$(skopeo inspect --format '{{.Digest}}' "docker://${REPO}:${ARCH}-${KEY}")"
+          cosign verify \
+            --certificate-identity-regexp '^https://github.com/projectbluefin/fsdk-containers/.github/workflows/' \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "${REPO}@${DIGEST}" >/dev/null
+          # Copy exactly the verified digest; never touch podman storage.
+          bundle="$(mktemp -d)"
+          trap 'rm -rf "${bundle}"' EXIT
+          skopeo copy "docker://${REPO}@${DIGEST}" "dir:${bundle}"
+          layer="$(jq -r '.layers[0].digest' "${bundle}/manifest.json" | cut -d: -f2)"
+          tar -C ~/.cache/buildstream -xf "${bundle}/${layer}"
+          SEED
+          then
+            echo "::warning::printing base: seeding ${ARCH}-${KEY} failed; building it locally"
+          elif [[ "$(show '%{state}')" != cached ]]; then
+            echo "::warning::printing base: ${ARCH}-${KEY} not verified or not cached after seeding; building it locally"
+          else
+            echo "printing base seeded from ${ARCH}-${KEY}"
+          fi
       - name: Build image
         run: just bst --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Build and verify FSDK appliance
         run: just verify
       - name: Add release config labels and export OCI archive
         env:
-          VERSION: ${{ needs.metadata.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
           FSDK_VERSION: ${{ needs.metadata.outputs.fsdk_version }}
@@ -104,7 +166,6 @@ jobs:
           container="$(podman create "$source_image")"
           trap 'podman rm "$container" >/dev/null 2>&1 || true' EXIT
           podman commit --format oci \
-            --change "LABEL org.opencontainers.image.version=$VERSION" \
             --change "LABEL org.opencontainers.image.revision=$REVISION" \
             --change "LABEL org.opencontainers.image.created=$CREATED" \
             --change "LABEL org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
@@ -153,13 +214,12 @@ jobs:
       - name: Generate BuildStream-native SPDX SBOM
         run: just sbom
       # Everything is pushed, signed, attested and verified by digest; the
-      # human-readable version tags are created only in the final step, so a
-      # failed release never leaves a tagged, unsigned image behind.
+      # tags are created only in the final step, so a failed publication never
+      # leaves a tagged, unsigned image behind.
       - name: Publish architecture manifests and OCI index by digest
         id: publish
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.metadata.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
           FSDK_VERSION: ${{ needs.metadata.outputs.fsdk_version }}
@@ -169,15 +229,25 @@ jobs:
           owner="${GITHUB_REPOSITORY_OWNER,,}"
           image="ghcr.io/${owner}/ghostscript-printer-app"
           authfile="$HOME/.docker/config.json"
-          for tag in "$VERSION" "$VERSION-x86_64" "$VERSION-aarch64"; do
-            if probe="$(skopeo inspect --authfile "$authfile" "docker://${image}:${tag}" 2>&1)"; then
-              printf 'Refusing to overwrite immutable release tag %s:%s\n' "$image" "$tag" >&2
-              exit 1
-            elif [[ "${probe,,}" != *"manifest unknown"* && "${probe,,}" != *"name unknown"* ]]; then
-              printf 'Could not prove release tag %s:%s is absent: %s\n' "$image" "$tag" "$probe" >&2
-              exit 1
-            fi
-          done
+          tag="sha-${REVISION}"
+          if probe="$(skopeo inspect --authfile "$authfile" "docker://${image}:${tag}" 2>&1)"; then
+            printf 'Refusing to overwrite immutable commit tag %s:%s\n' "$image" "$tag" >&2
+            exit 1
+          elif [[ "${probe,,}" != *"manifest unknown"* && "${probe,,}" != *"name unknown"* ]]; then
+            printf 'Could not prove commit tag %s:%s is absent: %s\n' "$image" "$tag" "$probe" >&2
+            exit 1
+          fi
+          # The application version is derived at build time (the junction's
+          # Ghostscript plus the VERSION packaging revision); read it from the
+          # verified images and require both architectures to agree.
+          version_of() {
+            skopeo inspect --config "oci-archive:ghostscript-$1.oci" |
+              jq -r '.config.Labels["org.opencontainers.image.version"]'
+          }
+          VERSION="$(version_of x86_64)"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]]
+          [[ "$(version_of aarch64)" == "$VERSION" ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           sources=()
           for arch in x86_64 aarch64; do
             platform="$([[ "$arch" == x86_64 ]] && echo amd64 || echo arm64)"
@@ -260,14 +330,14 @@ jobs:
           SBOM_DIGEST: ${{ steps.evidence.outputs.sbom-digest }}
           X86_64_DIGEST: ${{ steps.publish.outputs.x86_64-digest }}
           AARCH64_DIGEST: ${{ steps.publish.outputs.aarch64-digest }}
-          VERSION: ${{ needs.metadata.outputs.version }}
+          VERSION: ${{ steps.publish.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
           FSDK_VERSION: ${{ needs.metadata.outputs.fsdk_version }}
           FSDK_REF: ${{ needs.metadata.outputs.fsdk_ref }}
         run: |
           set -euo pipefail
-          identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/registry-actions.yml@refs/tags/v${VERSION}"
+          identity="https://github.com/${GITHUB_REPOSITORY}/.github/workflows/registry-actions.yml@${GITHUB_REF}"
           cosign verify \
             --certificate-identity "$identity" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
@@ -303,17 +373,24 @@ jobs:
              .annotations["org.opencontainers.image.licenses"] == "Apache-2.0" and
              .annotations["io.projectbluefin.fsdk.version"] == $fsdk_version and
              .annotations["io.projectbluefin.fsdk.ref"] == $fsdk_ref' <<< "$raw"
-      - name: Tag the verified release
+      # sha-<commit> is immutable (refused above if present); <VERSION>, its
+      # per-architecture tags and stable move to the newest verified testing
+      # commit.
+      - name: Tag the verified image
         env:
           IMAGE: ${{ steps.publish.outputs.image }}
           DIGEST: ${{ steps.publish.outputs.digest }}
           X86_64_DIGEST: ${{ steps.publish.outputs.x86_64-digest }}
           AARCH64_DIGEST: ${{ steps.publish.outputs.aarch64-digest }}
-          VERSION: ${{ needs.metadata.outputs.version }}
+          VERSION: ${{ steps.publish.outputs.version }}
+          REVISION: ${{ needs.metadata.outputs.revision }}
         run: |
           set -euo pipefail
+          oras tag "${IMAGE}@${DIGEST}" "sha-${REVISION}"
           oras tag "${IMAGE}@${X86_64_DIGEST}" "${VERSION}-x86_64"
           oras tag "${IMAGE}@${AARCH64_DIGEST}" "${VERSION}-aarch64"
           oras tag "${IMAGE}@${DIGEST}" "${VERSION}"
           oras tag "${IMAGE}@${DIGEST}" stable
-          [[ "$(skopeo inspect --raw "docker://${IMAGE}:${VERSION}" | sha256sum | cut -d' ' -f1)" == "${DIGEST#sha256:}" ]]
+          for tag in "sha-${REVISION}" "${VERSION}" stable; do
+            [[ "$(skopeo inspect --raw "docker://${IMAGE}:${tag}" | sha256sum | cut -d' ' -f1)" == "${DIGEST#sha256:}" ]]
+          done

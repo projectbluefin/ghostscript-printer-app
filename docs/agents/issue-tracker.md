@@ -21,19 +21,17 @@ second copy of a ticket in `.scratch/`.
 - **Resolve:** the merging PR closes the issue; add the outcome in the PR body
   (`Closes #NN`).
 
-## Target branch and promotion gate
+## Target branch and publication
 
 - **Submit contributor PRs to `testing`.** This is the active development
   branch and the repository default.
-- **`stable` is a separate promotion gate.** Maintainers promote an exact,
-  merge-queue-verified `testing` commit by dispatching `promote-stable.yml`,
-  which rebuilds and verifies both native architectures before fast-forwarding
-  `stable`. Only a Git tag on `stable` matching `v$(cat VERSION)` publishes a
-  release: an immutable application-version GHCR
-  multi-architecture index with keyless signature, SPDX SBOM, provenance, and
-  verified OCI referrers; `stable` then moves to that index. There is **no**
-  `latest` or `edge` OCI tag, and contributors should not open `stable` PRs or
-  publish other channel aliases.
+- **Landing on `testing` publishes.** After the merge queue's full native
+  gate, `registry-actions.yml` rebuilds and re-verifies both architectures,
+  then publishes a GHCR multi-architecture index with keyless signature, SPDX
+  SBOM, provenance, and verified OCI referrers, tagged immutable
+  `sha-<commit>` and moving `<VERSION>` and `stable`. There is no promotion
+  step or release tag; revert a PR to roll back. There is
+  **no** `latest` or `edge` OCI tag; do not publish other channel aliases.
 
 ## Smoke evidence
 

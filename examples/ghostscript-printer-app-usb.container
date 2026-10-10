@@ -1,10 +1,13 @@
 # Install in ~/.config/containers/systemd/ after following docs/oci-physical-validation.md.
-# Replace the image in BOTH Image= and ExecStartPre= with the same tested digest.
+# Follows the moving stable tag; podman-auto-update.timer pulls each new signed
+# publication. To pin a tested digest, set it in BOTH Image= and ExecStartPre=
+# and drop AutoUpdate=.
 [Unit]
 Description=Ghostscript Printer Application (rootless USB)
 
 [Container]
-Image=ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-4
+Image=ghcr.io/projectbluefin/ghostscript-printer-app:stable
+AutoUpdate=registry
 ContainerName=ghostscript-printer-app-usb
 Network=host
 User=65532:65532
@@ -15,7 +18,7 @@ Volume=ghostscript-printer-app-usb:/var/lib/ghostscript-printer-app:Z,U
 
 [Service]
 # Replace 001/002 with the connected printer node; it can change on reconnect.
-ExecStartPre=/usr/bin/python3 %h/.local/libexec/check-rootless-usb.py ghcr.io/projectbluefin/ghostscript-printer-app:10.07.1-4 /dev/bus/usb/001/002
+ExecStartPre=/usr/bin/python3 %h/.local/libexec/check-rootless-usb.py ghcr.io/projectbluefin/ghostscript-printer-app:stable /dev/bus/usb/001/002
 TimeoutStartSec=300
 
 [Install]

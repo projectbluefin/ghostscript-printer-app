@@ -97,7 +97,7 @@ CUPS, cups-filters, libcupsfilters, libppd, Ghostscript, mutool, the nonroot `av
 
 `just verify-ghostscript-romfs` is part of `just verify`, so the merge queue runs
 it on both native architectures for every change, including each
-`update-base.yml` fsdk-containers bump. Ghostscript's bundled zlib is set by
+Renovate fsdk-containers bump. Ghostscript's bundled zlib is set by
 fsdk-containers' printing patch; run `just verify-cups-patch-chain` first when
 bumping `elements/fsdk-containers.bst`, since it checks the resolved Ghostscript
 configuration that patch produces.
