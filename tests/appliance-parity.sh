@@ -49,12 +49,11 @@ expect_equal entrypoint "$(podman image inspect "$image" --format '{{json .Confi
 expect_equal title "$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.title"}}')" ghostscript-printer-app
 expect_equal source "$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.source"}}')" https://github.com/projectbluefin/ghostscript-printer-app
 expect_equal license "$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.licenses"}}')" Apache-2.0
-application_version="$(podman run --rm --entrypoint /usr/bin/ghostscript-printer-app "$image" --version)"
-expect_equal binary-version "$application_version" "$(< VERSION)"
-# An fsdk-containers bump that moves Ghostscript fails here until
-# `python3 scripts/sync-fsdk-metadata.py` moves VERSION and IJS with it.
-expect_equal ghostscript-version "$(podman run --rm --entrypoint /usr/bin/gs "$image" --version)" "${application_version%-*}"
-expect_equal image-version "$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')" "$application_version"
+# The application version is derived at build time: the image's Ghostscript
+# plus the packaging revision in VERSION.
+image_version="$(podman image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')"
+expect_equal image-version "$image_version" "$(podman run --rm --entrypoint /usr/bin/gs "$image" --version)-$(< VERSION)"
+expect_equal binary-version "$(podman run --rm --entrypoint /usr/bin/ghostscript-printer-app "$image" --version)" "$image_version"
 
 podman run --rm --user 0:0 --entrypoint /usr/bin/bash \
   -e ADVERTISED_GHOSTSCRIPT_DRIVERS="$advertised_ghostscript_drivers" \

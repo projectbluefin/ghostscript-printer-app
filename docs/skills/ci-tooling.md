@@ -22,7 +22,7 @@ metadata:
 ## Core Process
 
 1. Keep pull-request CI credential-free: `contents: read`, native amd64/arm64 runners, and `just verify`.
-2. Publish only from pushes to `testing` (`registry-actions.yml`); its publish job `needs` both native builds, each of which runs `just verify` first. `VERSION` is the application version; the metadata job rejects any other ref before a write-capable job starts.
+2. Publish only from pushes to `testing` (`registry-actions.yml`); its publish job `needs` both native builds, each of which runs `just verify` first. The metadata job rejects any other ref before a write-capable job starts.
 3. Grant `packages: write`, `id-token: write`, and `attestations: write` only to the publish job.
 4. Refuse an existing immutable `sha-<commit>` tag. Proceed only when the authenticated registry response explicitly reports a missing manifest or repository; network and authentication failures are fatal. Move `<VERSION>`, `<VERSION>-x86_64`, `<VERSION>-aarch64` and `stable` only after every check passes.
 5. Add version, revision, creation time, license, source URL, FSDK version, and FSDK ref to every architecture image config and to the multi-architecture index.
@@ -32,7 +32,7 @@ metadata:
 9. Give every external BuildStream source a project alias. Prefer an authoritative, checksummed release archive over a personal Git mirror when upstream Git is unreliable.
 10. Give pull-request CI a PR-scoped concurrency group with `cancel-in-progress: true`; stacked force-pushes must not leave duplicate multi-hour architecture jobs consuming the runner pool.
 11. Seed `fsdk-containers.bst:printing/base.bst` before the merge-queue, publish and cache-refill builds from `ghcr.io/projectbluefin/printing-base-devel:<arch>-<full-key>`, only after `cosign verify` of its digest against fsdk-containers' workflow identity. The seed step never fails the job: any error is a `::warning::` and BuildStream builds the base locally.
-12. Never commit `io.projectbluefin.fsdk.*` labels: the publish metadata job reads them from `elements/freedesktop-sdk.bst` at the pinned fsdk-containers commit, so a bare Renovate bump is complete. Hosted Renovate runs no repository scripts.
+12. Never commit metadata a junction bump must rewrite. `printer-app/version.bst` derives the application version as `<gs --version>-<VERSION revision>` at build time and the publish job tags from the images' `org.opencontainers.image.version` label (both architectures must agree); `printer-app/ijs.bst` takes its ghostpdl source from FSDK's ghostscript element through a junction include; the publish metadata job reads `io.projectbluefin.fsdk.*` from `elements/freedesktop-sdk.bst` at the pinned fsdk-containers commit. Hosted Renovate runs no repository scripts.
 13. Treat `oras discover --format json` as a referrer-tree response and query its top-level `.referrers[]`; `.manifests[]` belongs to OCI index JSON, not ORAS discovery output.
 
 ## Common Rationalizations

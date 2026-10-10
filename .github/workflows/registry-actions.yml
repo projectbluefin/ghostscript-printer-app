@@ -24,7 +24,6 @@ jobs:
     permissions:
       contents: read
     outputs:
-      version: ${{ steps.release.outputs.version }}
       revision: ${{ steps.release.outputs.revision }}
       created: ${{ steps.release.outputs.created }}
       fsdk_version: ${{ steps.release.outputs.fsdk_version }}
@@ -42,8 +41,6 @@ jobs:
             printf 'Publish only from testing, not %s\n' "$GITHUB_REF" >&2
             exit 1
           fi
-          version="$(< VERSION)"
-          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]]
           # FSDK comes only through the fsdk-containers junction; read its pin
           # there, so a bare junction bump needs no committed FSDK metadata.
           junction_ref="$(sed -n 's/^[[:space:]]*ref: \([0-9a-f]\{40\}\)$/\1/p' elements/fsdk-containers.bst)"
@@ -56,7 +53,6 @@ jobs:
           read -r fsdk_version fsdk_ref <<< "$(sed -n 's/^[[:space:]]*ref: freedesktop-sdk-\(.*\)-0-g\([0-9a-f]\{40\}\)$/\1 \2/p' <<< "$junction")"
           [[ -n "$fsdk_version" && "$fsdk_ref" =~ ^[0-9a-f]{40}$ ]]
           {
-            echo "version=$version"
             echo "revision=$(git rev-parse HEAD)"
             echo "created=$(git show -s --format=%cI HEAD)"
             echo "fsdk_version=$fsdk_version"
@@ -160,7 +156,6 @@ jobs:
         run: just verify
       - name: Add release config labels and export OCI archive
         env:
-          VERSION: ${{ needs.metadata.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
           FSDK_VERSION: ${{ needs.metadata.outputs.fsdk_version }}
@@ -171,7 +166,6 @@ jobs:
           container="$(podman create "$source_image")"
           trap 'podman rm "$container" >/dev/null 2>&1 || true' EXIT
           podman commit --format oci \
-            --change "LABEL org.opencontainers.image.version=$VERSION" \
             --change "LABEL org.opencontainers.image.revision=$REVISION" \
             --change "LABEL org.opencontainers.image.created=$CREATED" \
             --change "LABEL org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
@@ -226,7 +220,6 @@ jobs:
         id: publish
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ needs.metadata.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
           FSDK_VERSION: ${{ needs.metadata.outputs.fsdk_version }}
@@ -244,6 +237,17 @@ jobs:
             printf 'Could not prove commit tag %s:%s is absent: %s\n' "$image" "$tag" "$probe" >&2
             exit 1
           fi
+          # The application version is derived at build time (the junction's
+          # Ghostscript plus the VERSION packaging revision); read it from the
+          # verified images and require both architectures to agree.
+          version_of() {
+            skopeo inspect --config "oci-archive:ghostscript-$1.oci" |
+              jq -r '.config.Labels["org.opencontainers.image.version"]'
+          }
+          VERSION="$(version_of x86_64)"
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+-[1-9][0-9]*$ ]]
+          [[ "$(version_of aarch64)" == "$VERSION" ]]
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           sources=()
           for arch in x86_64 aarch64; do
             platform="$([[ "$arch" == x86_64 ]] && echo amd64 || echo arm64)"
@@ -326,7 +330,7 @@ jobs:
           SBOM_DIGEST: ${{ steps.evidence.outputs.sbom-digest }}
           X86_64_DIGEST: ${{ steps.publish.outputs.x86_64-digest }}
           AARCH64_DIGEST: ${{ steps.publish.outputs.aarch64-digest }}
-          VERSION: ${{ needs.metadata.outputs.version }}
+          VERSION: ${{ steps.publish.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
           FSDK_VERSION: ${{ needs.metadata.outputs.fsdk_version }}
@@ -378,7 +382,7 @@ jobs:
           DIGEST: ${{ steps.publish.outputs.digest }}
           X86_64_DIGEST: ${{ steps.publish.outputs.x86_64-digest }}
           AARCH64_DIGEST: ${{ steps.publish.outputs.aarch64-digest }}
-          VERSION: ${{ needs.metadata.outputs.version }}
+          VERSION: ${{ steps.publish.outputs.version }}
           REVISION: ${{ needs.metadata.outputs.revision }}
         run: |
           set -euo pipefail

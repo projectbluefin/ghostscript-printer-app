@@ -349,8 +349,8 @@ it away) and restart the Snap to get it restored.
 
 The OCI appliance is published only to the GitHub Container Registry. Every
 verified commit on `testing` gets an immutable `sha-<commit>` tag and moves
-`stable` and the application-version tag ([`VERSION`](VERSION), plus
-`<VERSION>-x86_64` and `<VERSION>-aarch64`) to its signed index; there is no
+`stable` and the application-version tag `<VERSION>` (plus `<VERSION>-x86_64`
+and `<VERSION>-aarch64`) to its signed index; there is no
 `latest` or `edge` OCI tag.
 
 ### Run the published image
@@ -494,16 +494,15 @@ reference it.
 Every push to `testing` publishes: `registry-actions.yml` rebuilds and verifies
 native amd64 and arm64 images, then pushes, signs (index and both architecture
 manifests), attests and verifies everything by digest, including its SPDX SBOM,
-keyless signatures, GitHub provenance, and OCI metadata. It derives the FSDK
-version and ref labels from the fsdk-containers junction, so a junction bump
-needs no other change. Only after every check passes does it create the
-immutable `sha-<commit>` tag and move `<VERSION>`, `<VERSION>-x86_64`,
-`<VERSION>-aarch64` and `stable`, so a failed publication leaves no tagged,
-unsigned image. Roll back by reverting the offending PR.
-
-A junction bump that moves FSDK's Ghostscript fails the appliance parity gate
-until `python3 scripts/sync-fsdk-metadata.py` updates `VERSION` and the IJS
-source on that PR.
+keyless signatures, GitHub provenance, and OCI metadata. The application
+version is derived at build time: the junction's Ghostscript release plus the
+packaging revision in [`VERSION`](VERSION) (e.g. `10.07.1-4`). IJS builds from
+that same Ghostscript source, and the FSDK version and ref labels come from the
+fsdk-containers junction, so a junction bump needs no other change. Only after
+every check passes does it create the immutable `sha-<commit>` tag and move
+`<VERSION>`, `<VERSION>-x86_64`, `<VERSION>-aarch64` and `stable`, so a failed
+publication leaves no tagged, unsigned image. Roll back by reverting the
+offending PR.
 
 ## BUILDING WITHOUT PACKAGING OR INSTALLATION
 
