@@ -27,7 +27,7 @@ printer](http://www.openprinting.org/printers/), [by
 driver](http://www.openprinting.org/drivers/),
 [Downlod](http://github.com/OpenPrinting/foomatic-db)) is used.
 
-For the Bluefin OCI appliance, report [issues](https://github.com/projectbluefin/ghostscript-printer-app/issues) and propose changes to the `testing` branch of [the Bluefin fork](https://github.com/projectbluefin/ghostscript-printer-app). For upstream application and Snap changes, use [OpenPrinting](https://github.com/OpenPrinting/ghostscript-printer-app).
+For the Bluefin OCI appliance, report [issues](https://github.com/projectbluefin/ghostscript-printer-app/issues) and propose changes to the `main` branch of [the Bluefin fork](https://github.com/projectbluefin/ghostscript-printer-app). For upstream application and Snap changes, use [OpenPrinting](https://github.com/OpenPrinting/ghostscript-printer-app).
 
 
 ### Contained Printer Drivers
@@ -348,7 +348,7 @@ it away) and restart the Snap to get it restored.
 ## OCI CONTAINER IMAGE
 
 The OCI appliance is published only to the GitHub Container Registry. Each
-published commit on `testing` gets an immutable `sha-<commit>` tag and moves
+published commit on `main` gets an immutable `sha-<commit>` tag and moves
 `stable` and the application-version tag `<VERSION>` (plus `<VERSION>-x86_64`
 and `<VERSION>-aarch64`) to its signed index; there is no
 `latest` or `edge` OCI tag.
@@ -481,17 +481,16 @@ see the [Snap parity matrix](docs/snap-parity-matrix.md).
 
 Merge-queue CI and the publish workflow restore BuildStream's local cache (`cas`, `artifacts`,
 `source_protos`) from the Actions cache. The `BuildStream cache refill` workflow
-rebuilds and saves it per architecture on `testing` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache skips the save with a warning and the run stays green); reset it with `gh cache delete --all`.
+rebuilds and saves it per architecture on `main` pushes and nightly (saved only when an arch fits in 9000 MB uncompressed; a larger cache skips the save with a warning and the run stays green); reset it with `gh cache delete --all`.
 
 ### Development and releases
 
-Open OCI development PRs against `testing`; Renovate's fsdk-containers bumps land
+Open OCI development PRs against `main`; Renovate's fsdk-containers bumps land
 there too. Pull requests run `just validate`, and the merge queue runs the full
 native amd64 and arm64 build and `just verify` before a change lands on
-`testing`. Retain `main` only while existing feature branches or workflows still
-reference it.
+`main`.
 
-Every push to `testing` publishes: `registry-actions.yml` rebuilds and verifies
+Every push to `main` publishes: `registry-actions.yml` rebuilds and verifies
 native amd64 and arm64 images, then pushes, signs (index and both architecture
 manifests), attests and verifies everything by digest, including its SPDX SBOM,
 keyless signatures, GitHub provenance, and OCI metadata. The application

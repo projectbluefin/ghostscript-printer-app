@@ -1,6 +1,6 @@
 name: CI
 
-# Pushes to testing are rebuilt, verified and published by registry-actions.yml.
+# Pushes to main are rebuilt, verified and published by registry-actions.yml.
 on:
   pull_request: {}
   merge_group:
