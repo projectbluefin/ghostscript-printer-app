@@ -116,6 +116,11 @@ verify-stateful-drivers:
 verify-ghostscript-romfs:
     tests/ghostscript-romfs.sh
 
+# The driver auto-add picks from an IEEE-1284 device ID: model-specific PPD
+# first, then the Generic PostScript, PCL XL, PCL 5c and PCL 5e fallbacks.
+verify-driver-autoselect:
+    tests/driver-autoselect.sh
+
 verify-cups-patch-chain:
     tests/cups-patch-chain.sh
 
@@ -167,6 +172,7 @@ verify:
     just verify-raster-drivers
     just verify-packaged-drivers
     just verify-stateful-drivers
+    just verify-driver-autoselect
     tests/appliance-parity.sh
     just verify-no-devel
 
