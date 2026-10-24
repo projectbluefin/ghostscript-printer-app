@@ -1,11 +1,11 @@
 name: Publish signed OCI image
 
-# Every push to testing (only the merge queue lands there, after its full
+# Every push to main (only the merge queue lands there, after its full
 # native build and `just verify`) rebuilds, re-verifies and publishes; the
 # publish job needs both verified builds. Reverting a PR is the rollback.
 on:
   push:
-    branches: [testing]
+    branches: [main]
   workflow_dispatch:
 
 # One publication at a time, newest pending wins; never cancel a running one.
@@ -37,8 +37,8 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "$GITHUB_REF" != refs/heads/testing ]]; then
-            printf 'Publish only from testing, not %s\n' "$GITHUB_REF" >&2
+          if [[ "$GITHUB_REF" != refs/heads/main ]]; then
+            printf 'Publish only from main, not %s\n' "$GITHUB_REF" >&2
             exit 1
           fi
           # FSDK comes only through the fsdk-containers junction; read its pin
@@ -374,7 +374,7 @@ jobs:
              .annotations["io.projectbluefin.fsdk.version"] == $fsdk_version and
              .annotations["io.projectbluefin.fsdk.ref"] == $fsdk_ref' <<< "$raw"
       # sha-<commit> is immutable (refused above if present); <VERSION>, its
-      # per-architecture tags and stable move to the newest verified testing
+      # per-architecture tags and stable move to the newest verified main
       # commit.
       - name: Tag the verified image
         env:
