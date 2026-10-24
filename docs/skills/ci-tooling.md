@@ -22,11 +22,11 @@ metadata:
 ## Core Process
 
 1. Keep pull-request CI credential-free: `contents: read`, native amd64/arm64 runners, and `just verify`.
-2. Publish only from pushes to `testing` (`registry-actions.yml`); its publish job `needs` both native builds, each of which runs `just verify` first. The metadata job rejects any other ref before a write-capable job starts.
+2. Publish only from pushes to `main` (`registry-actions.yml`); its publish job `needs` both native builds, each of which runs `just verify` first. The metadata job rejects any other ref before a write-capable job starts.
 3. Grant `packages: write`, `id-token: write`, and `attestations: write` only to the publish job.
 4. Refuse an existing immutable `sha-<commit>` tag. Proceed only when the authenticated registry response explicitly reports a missing manifest or repository; network and authentication failures are fatal. Move `<VERSION>`, `<VERSION>-x86_64`, `<VERSION>-aarch64` and `stable` only after every check passes.
 5. Add version, revision, creation time, license, source URL, FSDK version, and FSDK ref to every architecture image config and to the multi-architecture index.
-6. Generate one BuildStream-native SPDX JSON document for the complete dependency graph, attach it to the index, keyless-sign the index and SBOM artifact, publish GitHub provenance with `actions/attest`, then verify all three forms of evidence against the `registry-actions.yml@refs/heads/testing` identity.
+6. Generate one BuildStream-native SPDX JSON document for the complete dependency graph, attach it to the index, keyless-sign the index and SBOM artifact, publish GitHub provenance with `actions/attest`, then verify all three forms of evidence against the `registry-actions.yml@refs/heads/main` identity.
 7. Renovate tracks `elements/fsdk-containers.bst` (FSDK and the shared printing base) with a `git-refs` custom manager and automerges behind the merge queue's full build and `just verify`. Keep `custom.regex` in `enabledManagers` (otherwise the manager is silently disabled), `minimumReleaseAge` unset for it (git-refs digests have no release timestamp), and every required check unfiltered so automerge never waits on a pending context.
 8. Obsolete upstream package automation must not publish or gate a container-only release.
 9. Give every external BuildStream source a project alias. Prefer an authoritative, checksummed release archive over a personal Git mirror when upstream Git is unreliable.
@@ -49,7 +49,7 @@ metadata:
 ## Red Flags
 
 - Registry login, package write permission, or OIDC access in a pull-request job.
-- A publish trigger other than a push to `testing`, or a publish job without `needs` on the verified builds.
+- A publish trigger other than a push to `main`, or a publish job without `needs` on the verified builds.
 - `latest` or `edge` in the OCI publish workflow.
 - Unpinned third-party actions.
 - Committed FSDK metadata that a junction bump must rewrite.
@@ -68,7 +68,7 @@ metadata:
 - [ ] Pushing a replacement commit cancels the superseded run for the same pull request.
 - [ ] `npx --yes --package renovate -- renovate-config-validator renovate.json` succeeds.
 - [ ] SBOM discovery selects the expected digest and `application/vnd.spdx+json` type from `.referrers[]`.
-- [ ] A run on any ref other than `testing` fails in the metadata job before any write-capable job.
+- [ ] A run on any ref other than `main` fails in the metadata job before any write-capable job.
 - [ ] The published index contains exactly amd64 and arm64 and has the required annotations.
 - [ ] `cosign verify` succeeds for the index and SBOM artifact.
 - [ ] `gh attestation verify oci://<image>@<digest> --repo <owner/repo>` succeeds.
