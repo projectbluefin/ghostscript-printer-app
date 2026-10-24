@@ -48,9 +48,9 @@ sed -n "${arguments_start},$((launch_start - 1))p" "$entrypoint" >"$work/argumen
 sed -n "${launch_start},\$p" "$entrypoint" >"$work/launch.sh"
 
 # A stand-in daemon. It announces itself only once its TERM trap is installed,
-# records its name when stopped, and in exit:N mode exits N as soon as the
-# server is up, so "a daemon died while the appliance was running" is
-# deterministic.
+# records its name when stopped, and in exit:N mode exits N once all three
+# children are up, so "a daemon died while the appliance was running" is
+# deterministic and no sibling can be stopped before its trap exists.
 child="$work/child.sh"
 cat >"$child" <<'CHILD'
 #!/usr/bin/env bash
@@ -60,7 +60,9 @@ trap 'printf "%s\n" "$name" >>"$stopped"; exit 0' TERM
 case "$mode" in
   run) while :; do sleep 0.05; done ;;
   exit:*)
-    while [[ ! -e "$ready.ghostscript-printer-app" ]]; do sleep 0.05; done
+    for peer in dbus-daemon avahi-daemon ghostscript-printer-app; do
+      while [[ ! -e "$ready.$peer" ]]; do sleep 0.05; done
+    done
     exit "${mode#exit:}"
     ;;
 esac
