@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Structural and failure-path checks, not physical USB evidence."""
 import configparser
+import contextlib
+import io
 import importlib.util
 import os
 from pathlib import Path
@@ -75,6 +77,75 @@ class RootlessUSB(unittest.TestCase):
             with self.assertRaises(SystemExit) as result:
                 exec(usb.PROBE, {})
             self.assertEqual(result.exception.code, 1)
+
+
+    def test_success_runs_probe_as_appliance_user(self):
+        out = io.StringIO()
+        with patch.object(sys, "argv", ["check", "img@sha256:abc", "/dev/bus/usb/003/017"]), \
+             patch.object(usb.subprocess, "run") as run, contextlib.redirect_stdout(out):
+            run.return_value.stdout = "true\n"
+            self.assertEqual(usb.main(), 0)
+        self.assertEqual(run.call_count, 2)
+        self.assertEqual(run.call_args_list[0].args[0][:2], ["podman", "info"])
+        probe = run.call_args.args[0]
+        self.assertEqual(probe[-4:], ["img@sha256:abc", "-c", usb.PROBE, "/dev/bus/usb/003/017"])
+        self.assertTrue(run.call_args.kwargs["check"])
+        self.assertIn("OK: rootless USB node opens read/write", out.getvalue())
+        self.assertIn("physical printing remains unverified", out.getvalue())
+
+    def test_podman_info_failure_is_actionable(self):
+        err = io.StringIO()
+        with patch.object(sys, "argv", ["check", "image", "/dev/bus/usb/001/002"]), \
+             patch.object(usb.subprocess, "run",
+                          side_effect=subprocess.CalledProcessError(125, ["podman", "info"])) as run, \
+             contextlib.redirect_stderr(err):
+            self.assertEqual(usb.main(), 1)
+        self.assertEqual(run.call_count, 1)
+        self.assertIn("FAIL: rootless USB preflight", err.getvalue())
+        self.assertIn(usb.REMEDIATION, err.getvalue())
+
+    def test_malformed_nodes_fail_through_main_without_podman(self):
+        for device in ["/dev/bus/usb/1/2", "/dev/bus/usb/001/0020", "/dev/bus/usb/001/002/",
+                       "/dev/bus/usb/001", "dev/bus/usb/001/002", "/dev/bus/usb/001/../..",
+                       "/dev/bus/usb", "/dev/bus/usb/001/002\n"]:
+            with self.subTest(device=device):
+                err = io.StringIO()
+                with patch.object(sys, "argv", ["check", "image", device]), \
+                     patch.object(usb.subprocess, "run") as run, contextlib.redirect_stderr(err):
+                    self.assertEqual(usb.main(), 1)
+                run.assert_not_called()
+                self.assertIn("/dev/bus/usb/BBB/DDD", err.getvalue())
+
+    def test_probe_rejects_non_character_device(self):
+        err = io.StringIO()
+        with patch("os.stat") as stat, patch("os.open") as open_, \
+             patch.object(sys, "argv", ["probe", "/dev/bus/usb/001/002"]), \
+             contextlib.redirect_stderr(err):
+            stat.return_value.st_mode = 0o100644
+            with self.assertRaises(SystemExit) as result:
+                exec(usb.PROBE, {})
+        self.assertEqual(result.exception.code, 1)
+        open_.assert_not_called()
+        self.assertIn("not a character device", err.getvalue())
+
+    def test_probe_missing_node(self):
+        err = io.StringIO()
+        with patch("os.stat", side_effect=FileNotFoundError("gone")), patch("os.open") as open_, \
+             patch.object(sys, "argv", ["probe", "/dev/bus/usb/001/002"]), \
+             contextlib.redirect_stderr(err):
+            with self.assertRaises(SystemExit) as result:
+                exec(usb.PROBE, {})
+        self.assertEqual(result.exception.code, 1)
+        open_.assert_not_called()
+        self.assertIn("/dev/bus/usb/001/002: gone", err.getvalue())
+
+    def test_probe_opens_read_write_nonblocking_and_closes(self):
+        with patch("os.stat") as stat, patch("os.open", return_value=42) as open_, \
+             patch("os.close") as close, patch.object(sys, "argv", ["probe", "/dev/bus/usb/001/002"]):
+            stat.return_value.st_mode = 0o020660
+            exec(usb.PROBE, {})
+        open_.assert_called_once_with("/dev/bus/usb/001/002", os.O_RDWR | os.O_NONBLOCK)
+        close.assert_called_once_with(42)
 
 
 if __name__ == "__main__":
