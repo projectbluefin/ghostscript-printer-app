@@ -2,7 +2,7 @@
 
 ## Checks and CI
 
-Every change is gated by CI plus a pre-commit hygiene pass:
+Every change is checked by CI plus a pre-commit hygiene pass:
 
 - **`validate`** (`.github/workflows/validate.yml`): runs `pre-commit run --all-files` on `pull_request` and `merge_group`. Runs `actionlint`, YAML/JSON/toml hygiene, and blocks floating GitHub Action tags — third-party actions must be pinned to a full SHA (`no-floating-action-tags`).
 - **Scorecard** (`.github/workflows/scorecard.yml`): OpenSSF Scorecard supply-chain check.
