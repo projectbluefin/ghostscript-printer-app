@@ -61,7 +61,7 @@ metadata:
 
 ## Verification
 
-- [ ] `actionlint .github/workflows/*.yml` succeeds.
+- [ ] `pre-commit run --all-files` succeeds (includes `actionlint` and the floating-tag check).
 - [ ] `just verify` succeeds locally.
 - [ ] Pull-request CI completes on native amd64 and arm64 runners without registry credentials.
 - [ ] BuildStream resolves and fetches every repository-owned source without `[unaliased-url]` warnings.
