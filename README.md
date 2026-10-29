@@ -489,7 +489,8 @@ rebuilds and saves it per architecture on `main` pushes and nightly (saved only 
 Open OCI development PRs against `main`; Renovate's fsdk-containers bumps land
 there too. Pull requests run `just validate`, and the merge queue runs the full
 native amd64 and arm64 build and `just verify` before a change lands on
-`main`.
+`main`. `just validate` also runs the Python unit tests in `tests/`; the
+install-pin gate needs PyYAML (`pip install -r .github/requirements-ci.txt`).
 
 Every push to `main` publishes: `registry-actions.yml` rebuilds and verifies
 native amd64 and arm64 images, then pushes, signs (index and both architecture

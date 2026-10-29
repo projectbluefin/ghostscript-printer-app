@@ -9,7 +9,8 @@
   ],
   "enabledManagers": [
     "custom.regex",
-    "github-actions"
+    "github-actions",
+    "pip_requirements"
   ],
   "customManagers": [
     {

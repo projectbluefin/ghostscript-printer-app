@@ -50,12 +50,14 @@ bst *ARGS:
 # Every check here runs on the host in seconds with no image and no printer, so
 # the pull-request gate runs it before the 360-minute appliance build. Keep it
 # that way: anything needing the built image belongs in `just verify`.
+# Needs PyYAML for tests/test_python_install_pins.py: pip install -r .github/requirements-ci.txt
 validate:
     just verify-rootless-usb
     just verify-entrypoint-validation
     tests/seed-printing-base.sh
     python3 tests/snap-parity-matrix.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
+    python3 tests/test_python_install_pins.py
     just bst show --deps all oci/ghostscript-printer-app.bst
 
 # Never fails: falls back to building the base locally (see ci/seed-printing-base.sh).
