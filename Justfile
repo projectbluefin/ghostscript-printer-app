@@ -56,6 +56,7 @@ validate:
     just verify-entrypoint-validation
     tests/seed-printing-base.sh
     python3 tests/snap-parity-matrix.py
+    python3 tests/test_snap_parity_matrix.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
     python3 tests/test_python_install_pins.py
     just bst show --deps all oci/ghostscript-printer-app.bst

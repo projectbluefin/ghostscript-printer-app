@@ -97,9 +97,11 @@ committed `snap/snapcraft.yaml` values are reproduced literally, since
 neither changes without a commit to this document's own repository. Those
 literals are not trusted: `tests/snap-parity-matrix.py` (run by `just
 validate`, so on every pull request) re-reads each `elements/printer-app/*.bst`
-`ref:`/`track:` and each `snap/snapcraft.yaml` `source-tag:` and fails when a
-reproduced value, a Status verdict, or the "Differs" list below no longer
-follows from them. `tests/appliance-parity.sh` checks the
+`ref:`/`track:` and each `snap/snapcraft.yaml` `source:`/`source-tag:` and
+fails when a reproduced value, a Status verdict, or the "Differs" list below
+no longer follows from them, or when a table row does not parse into its four
+columns. `tests/test_snap_parity_matrix.py` proves each of those drifts fails
+the check. `tests/appliance-parity.sh` checks the
 driver/backend/PPD-provider inventory in the built image, not this document.
 
 ## Reading this matrix

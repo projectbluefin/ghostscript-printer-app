@@ -60,15 +60,19 @@ def read_snap_parts():
             current = part.group(1)
             parts[current] = {}
             continue
-        field = re.match(r"^    (source-tag|source-commit|source-branch):\s*(\S+)\s*$", line)
+        field = re.match(r"^    (source|source-tag|source-commit|source-branch):\s*(\S+)\s*$", line)
         if field and current:
             parts[current][field.group(1)] = field.group(2).strip("'\"")
     return parts
 
 
 def element_ref_matches(ref, literal):
-    """BuildStream git refs are `<tag>-<depth>-g<sha>` or a bare commit sha."""
-    return ref == literal or ref.startswith(f"{literal}-")
+    """BuildStream git refs are `<tag>-<depth>-g<sha>` or a bare commit sha.
+
+    A plain prefix test would accept a longer tag (`debian/27-11` for
+    `debian/27-11-1-0-g…`), so only the describe suffix may follow the tag.
+    """
+    return ref == literal or re.fullmatch(rf"{re.escape(literal)}-\d+-g[0-9a-f]+", ref) is not None
 
 
 def table_rows(text):
@@ -82,7 +86,12 @@ def table_rows(text):
         if not line.startswith("|"):
             continue
         cells = [cell.strip() for cell in line.strip().strip("|").split(" | ")]
-        if len(cells) != 4 or cells[0] in ("Component", "---"):
+        if len(cells) != 4:
+            # A row that does not split into four cells would otherwise drop
+            # out of every comparison without a word.
+            fail(f"docs/snap-parity-matrix.md: table row does not have 4 cells: {line.strip()}")
+            continue
+        if cells[0] in ("Component", "---"):
             continue
         yield cells
 
@@ -151,6 +160,12 @@ def check_snap_cell(component, cell, parts):
     if not literals:
         return None
     tag = literals[-1]
+    for upstream in literals[:-1]:
+        if upstream not in part.get("source", ""):
+            fail(
+                f"{component}: matrix names upstream {upstream}, "
+                f"snapcraft.yaml {name} part builds from {part.get('source')}"
+            )
     if part.get("source-tag") != tag:
         fail(
             f"{component}: matrix says {name} part {tag}, "
