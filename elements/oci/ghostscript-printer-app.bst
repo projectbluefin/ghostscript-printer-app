@@ -12,8 +12,23 @@ build-depends:
     config:
       location: /layer
 
+variables:
+  (@):
+    - fsdk-containers.bst:include/slim-printing.yml
+  app-forbidden-paths: |
+    usr/share/cups/ipptool
+    usr/bin/cupsd
+    usr/bin/ippeveprinter
+    etc/avahi/services/ssh.service
+    etc/avahi/services/sftp-ssh.service
+
 config:
   commands:
+    # foo2zjs wrappers use psicc for ICC profiles; the shared recipe removes it.
+    - install -D -m 0755 /layer/usr/bin/psicc /tmp/psicc
+    - "%{slim-printing-commands}"
+    - "%{slim-printing-gate-commands}"
+    - install -D -m 0755 /tmp/psicc /layer/usr/bin/psicc
     - |
       version="$(cat /metadata/VERSION)"
       install -d /layer/etc
