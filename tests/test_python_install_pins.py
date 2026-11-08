@@ -243,6 +243,15 @@ class PythonInstallPinTests(unittest.TestCase):
             self.assertEqual(len(errors), 3, errors)
             self.assertTrue(any("Justfile:2:" in error for error in errors))
 
+    def test_validate_workflow_triggers_seed_main_cache(self):
+        workflow = yaml.load(
+            (ROOT / ".github/workflows/validate.yml").read_text(),
+            Loader=yaml.BaseLoader,
+        )
+        self.assertIn("pull_request", workflow["on"])
+        self.assertIn("merge_group", workflow["on"])
+        self.assertIn("main", workflow["on"]["push"]["branches"])
+
 
 if __name__ == "__main__":
     unittest.main()

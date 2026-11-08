@@ -2,10 +2,13 @@ name: Validate
 
 # Runs the org baseline pre-commit checks (YAML/JSON hygiene, actionlint, and
 # blocking floating Action tags) on pull requests and in the merge queue so the
-# check is required before a change lands.
+# check is required before a change lands. A push to main seeds the shared
+# pre-commit cache for pull requests targeting it.
 on:
   pull_request:
   merge_group:
+  push:
+    branches: [main]
 
 permissions: {}
 
