@@ -264,10 +264,7 @@ jobs:
           for arch in x86_64 aarch64; do
             platform="$([[ "$arch" == x86_64 ]] && echo amd64 || echo arm64)"
             archive="ghostscript-${arch}.oci"
-            layout="$(tar -xOf "$archive" index.json)"
-            jq -e '.manifests | length == 1' <<< "$layout" >/dev/null
-            digest="$(jq -r '.manifests[0].digest' <<< "$layout")"
-            [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
+            digest="$(scripts/oci-archive-digest.sh "$archive")"
             # Publish the child OCI archive directly (issue #207). The release
             # labels were added in the build job, so skopeo copy
             # --preserve-digests copies layer 0 byte-for-byte without

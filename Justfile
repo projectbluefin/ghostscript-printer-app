@@ -55,6 +55,7 @@ validate:
     just verify-rootless-usb
     just verify-entrypoint-validation
     tests/seed-printing-base.sh
+    tests/oci-archive-digest.sh
     python3 tests/snap-parity-matrix.py
     python3 tests/test_snap_parity_matrix.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
