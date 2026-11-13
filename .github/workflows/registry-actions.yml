@@ -264,7 +264,12 @@ jobs:
           for arch in x86_64 aarch64; do
             platform="$([[ "$arch" == x86_64 ]] && echo amd64 || echo arm64)"
             archive="ghostscript-${arch}.oci"
-            layout="$(tar -xOf "$archive" index.json)"
+            # The build job archives the layout with `tar -C release -cf … .`,
+            # so its members are ./index.json and so on. Unpack it, like
+            # hplip-printer-app does, instead of naming one member.
+            mkdir "layout-${arch}"
+            tar -xf "$archive" -C "layout-${arch}"
+            layout="$(cat "layout-${arch}/index.json")"
             jq -e '.manifests | length == 1' <<< "$layout" >/dev/null
             digest="$(jq -r '.manifests[0].digest' <<< "$layout")"
             [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
@@ -275,7 +280,7 @@ jobs:
             # needs the docker:// transport and the authfile, like the inspect
             # below.
             skopeo copy --preserve-digests --authfile "$authfile" \
-              "oci-archive:${archive}" "docker://${image}@${digest}"
+              "oci:layout-${arch}:build" "docker://${image}@${digest}"
             source="${image}@${digest}"
             actual="$(skopeo inspect --no-tags --authfile "$authfile" "docker://${source}" | jq -r .Architecture)"
             [[ "$actual" == "$platform" ]]
