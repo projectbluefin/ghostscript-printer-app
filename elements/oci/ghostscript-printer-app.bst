@@ -83,7 +83,15 @@ config:
       cd "%{install-root}"
       build-oci <<EOF
       mode: oci
-      gzip: disabled
+      # Build on the shared printing runtime layer (issue #207): gzip this
+      # image's own layer and mount the cosign-verified ghcr.io/projectbluefin/
+      # printing-runtime-layer OCI layout at /parent so its layer is copied
+      # byte-for-byte into this image's layer 0. Consumers then share one
+      # download (docs/skills/printing-base.md "Consumer wiring"). The layer
+      # stays a full final rootfs, not slim.
+      gzip: gzip
+      parent:
+        image: /parent
       images:
         - os: linux
           architecture: "%{go-arch}"

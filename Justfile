@@ -37,12 +37,21 @@ bst *ARGS:
     EOF
         RE_FLAG=(--config /src/.bst-re.conf)
     fi
+    # Shared printing runtime layer (issue #207): if a cosign-verified parent
+    # OCI layout was fetched to .parent, mount it at /parent so build-oci can
+    # copy its layer byte-for-byte into this image's layer 0. Skipped for a
+    # plain `just bst` invocation that did not fetch the parent first.
+    PARENT_FLAG=()
+    if [[ -d "{{ justfile_directory() }}/.parent" ]]; then
+        PARENT_FLAG+=(--volume "{{ justfile_directory() }}/.parent:/parent:rw")
+    fi
     podman run --rm \
         --privileged \
         --device /dev/fuse \
         --network=host \
         -v "{{ justfile_directory() }}:/src:rw" \
         -v "${HOME}/.cache/buildstream:/root/.cache/buildstream:rw" \
+        ${PARENT_FLAG[@]} \
         -w /src \
         "{{ bst2_image }}" \
         bash -c 'bst "$@"' -- --no-interactive ${BST_FLAGS:-} "${RE_FLAG[@]}" {{ ARGS }}
@@ -84,6 +93,9 @@ fetch:
 build:
     #!/usr/bin/env bash
     set -euo pipefail
+    # Fetch the shared printing runtime layer (issue #207) before building so
+    # build-oci can mount its layout at /parent. Needs skopeo + cosign.
+    just print-runtime-layer-parent
     just bst build oci/ghostscript-printer-app.bst
     just export
 
@@ -95,6 +107,32 @@ export:
     IMAGE_ID=$(podman pull -q oci:.build-out)
     rm -rf .build-out
     podman tag "$IMAGE_ID" "{{ image_ref }}"
+
+# Print the full cache key of fsdk-containers' elements/oci/printing-runtime-layer.bst
+# for this host arch, matching the published <arch>-<key> tag. Defined locally
+# because the element lives under the fsdk-containers junction here.
+printing-runtime-layer-key:
+    @just bst show --deps none --format '%{full-key}' fsdk-containers.bst:elements/oci/printing-runtime-layer.bst 2>/dev/null | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g'
+
+# Fetch the shared printing runtime layer (issue #207) before building. The
+# tag is <arch>-<full-key> of fsdk-containers' printing-runtime-layer; cosign
+# verifies the signature before the layout lands on disk, then skopeo writes
+# it to .parent for the build to mount at /parent. Needs skopeo + cosign.
+print-runtime-layer-parent:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    arch="$(uname -m)"
+    key="$(just printing-runtime-layer-key)"
+    repo=ghcr.io/projectbluefin/printing-runtime-layer
+    tag="${arch}-${key}"
+    ref="${repo}@$(skopeo inspect "docker://${repo}:${tag}" | jq -r .digest)"
+    cosign verify \
+        --certificate-identity \
+        https://github.com/projectbluefin/fsdk-containers/.github/workflows/printing-runtime-layer.yml@refs/heads/main \
+        --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+        "${ref}" >/dev/null
+    rm -rf .parent
+    skopeo copy --preserve-digests "docker://${ref}" oci:.parent:layer
 
 verify-core:
     tests/core-appliance.sh
