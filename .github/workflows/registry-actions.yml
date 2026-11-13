@@ -86,7 +86,7 @@ jobs:
         with:
           tool: just
       - name: Install host dependencies
-        run: sudo apt-get update && sudo apt-get install --yes fuse3 podman skopeo jq
+        run: sudo apt-get update && sudo apt-get install --yes fuse3 podman skopeo jq umoci
       - name: Compute BuildStream cache key
         id: cache-key
         env:
@@ -150,21 +150,22 @@ jobs:
           else
             echo "printing base seeded from ${ARCH}-${KEY}"
           fi
-      # Fetch the shared printing-runtime-layer parent and stage it at .parent
-      # for the build to mount at /parent (issue #207). Mirrors the doc's
-      # recipe: compute the key, fetch + cosign-verify the layer, extract it
-      # into .parent. The doc requires this to abort on any failed command
-      # (set -eu, no fallback): a partial or missing parent would silently
-      # break the shared-digest contract, so a fetch failure must fail the job.
+      # Fetch the shared printing-runtime-layer parent and stage it at
+      # runtime-parent/ for elements/printer-app/runtime-parent.bst to mount at
+      # /parent (issue #207). Mirrors the doc's recipe: compute the key,
+      # cosign-verify the layer, then skopeo writes the OCI layout. The doc
+      # requires this to abort on any failed command (set -euo, no fallback):
+      # a partial or missing parent would silently break the shared-digest
+      # contract, so a fetch failure must fail the job.
       - name: Fetch printing runtime layer parent
         run: |
           set -euo pipefail
-          just print-runtime-layer-parent
+          just prepare-parent
       - name: Build image
         run: just bst --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Build and verify FSDK appliance
         run: just verify
-      - name: Export the child OCI layout and archive it directly
+      - name: Stamp verified image with release provenance
         env:
           REVISION: ${{ needs.metadata.outputs.revision }}
           CREATED: ${{ needs.metadata.outputs.created }}
@@ -172,21 +173,18 @@ jobs:
           FSDK_REF: ${{ needs.metadata.outputs.fsdk_ref }}
         run: |
           set -euo pipefail
-          # Recreate the child OCI layout: `just export` removes it after
-          # pulling into podman storage. Publish it directly with skopeo
-          # copy --preserve-digests (issue #207): `podman commit` would
-          # recompress layer 0 and break the shared parent digest. The
-          # release labels are added here so the archive's manifest digest
-          # already includes them; the publish job then copies it verbatim.
-          just bst artifact checkout oci/ghostscript-printer-app.bst --directory .build-out
-          skopeo copy --preserve-digests \
-            --add-label org.opencontainers.image.revision="$REVISION" \
-            --add-label org.opencontainers.image.created="$CREATED" \
-            --add-label org.opencontainers.image.source="https://github.com/${GITHUB_REPOSITORY}" \
-            --add-label io.projectbluefin.fsdk.version="$FSDK_VERSION" \
-            --add-label io.projectbluefin.fsdk.ref="$FSDK_REF" \
-            "oci:.build-out" "oci-archive:ghostscript-${{ matrix.arch }}.oci"
-          rm -rf .build-out
+          # Change only the image configuration, never its layer blobs: a
+          # container-storage round trip may recompress the shared layer 0.
+          skopeo copy --preserve-digests oci:.build-out oci:release:build
+          umoci config --image release:build \
+            --config.label "org.opencontainers.image.revision=$REVISION" \
+            --config.label "org.opencontainers.image.created=$CREATED" \
+            --config.label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY" \
+            --config.label "io.projectbluefin.fsdk.version=$FSDK_VERSION" \
+            --config.label "io.projectbluefin.fsdk.ref=$FSDK_REF"
+          just check-shared-layer release:build
+          tar -C release -cf "ghostscript-${{ matrix.arch }}.oci" .
+          rm -rf .build-out release
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ghostscript-${{ matrix.arch }}
@@ -270,11 +268,14 @@ jobs:
             jq -e '.manifests | length == 1' <<< "$layout" >/dev/null
             digest="$(jq -r '.manifests[0].digest' <<< "$layout")"
             [[ "$digest" =~ ^sha256:[0-9a-f]{64}$ ]]
-            # Publish the child OCI layout directly (issue #207). The release
-            # labels are already baked into the archive by the build job, so a
-            # bare skopeo copy --preserve-digests copies layer 0 byte-for-byte
-            # without recompressing it (podman commit/save would not).
-            skopeo copy --preserve-digests "oci-archive:${archive}" "${image}@${digest}"
+            # Publish the child OCI archive directly (issue #207). The release
+            # labels were added in the build job, so skopeo copy
+            # --preserve-digests copies layer 0 byte-for-byte without
+            # recompressing it (podman commit/save would not). The destination
+            # needs the docker:// transport and the authfile, like the inspect
+            # below.
+            skopeo copy --preserve-digests --authfile "$authfile" \
+              "oci-archive:${archive}" "docker://${image}@${digest}"
             source="${image}@${digest}"
             actual="$(skopeo inspect --no-tags --authfile "$authfile" "docker://${source}" | jq -r .Architecture)"
             [[ "$actual" == "$platform" ]]

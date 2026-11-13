@@ -11,6 +11,9 @@ build-depends:
   - filename: printer-app/core-runtime.bst
     config:
       location: /layer
+  - filename: printer-app/runtime-parent.bst
+    config:
+      location: /parent
 
 variables:
   (@):
@@ -83,18 +86,14 @@ config:
       cd "%{install-root}"
       build-oci <<EOF
       mode: oci
-      # Build on the shared printing runtime layer (issue #207): gzip this
-      # image's own layer and mount the cosign-verified ghcr.io/projectbluefin/
-      # printing-runtime-layer OCI layout at /parent so its layer is copied
-      # byte-for-byte into this image's layer 0. Consumers then share one
-      # download (docs/skills/printing-base.md "Consumer wiring"). The layer
-      # stays a full final rootfs, not slim.
       gzip: gzip
-      parent:
-        image: /parent
       images:
         - os: linux
           architecture: "%{go-arch}"
+          # Layer 0 is the shared printing runtime layer, copied byte-for-byte
+          # (gzip mode only); /layer stays the full final rootfs.
+          parent:
+            image: /parent
           layer: /layer
           config:
             User: '65532:65532'
