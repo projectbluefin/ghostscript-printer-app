@@ -17,7 +17,7 @@ case "$arch" in x86_64|aarch64) ;; *) echo "Unsupported architecture: $arch" >&2
 # it. Fail explicitly on an empty/invalid key so we never build a tag like
 # `${arch}-` (an empty key would slip past `set -e` through jq).
 key="$(just bst -o arch "$arch" show --deps none --format '%{full-key}' \
-  fsdk-containers.bst:elements/oci/printing-runtime-layer.bst | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')"
+  fsdk-containers.bst:oci/printing-runtime-layer.bst | tail -n 1 | sed 's/\x1b\[[0-9;]*m//g')"
 [[ "$key" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid runtime layer key: '${key}'" >&2; exit 1; }
 
 repo=ghcr.io/projectbluefin/printing-runtime-layer
