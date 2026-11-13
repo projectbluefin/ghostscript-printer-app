@@ -97,7 +97,8 @@ export:
     rm -rf .build-out
     just bst artifact checkout oci/ghostscript-printer-app.bst --directory /src/.build-out
     IMAGE_ID=$(podman pull -q oci:.build-out)
-    rm -rf .build-out
+    # Keep .build-out: releases publish this layout directly, since container
+    # storage may recompress layer 0 and break the shared digest.
     podman tag "$IMAGE_ID" "{{ image_ref }}"
 
 # Fetch the shared printing runtime layer (issue #207) before building.
