@@ -7,6 +7,7 @@ on:
       - project.conf
       - elements/**
       - include/**
+      - junction-files/**
       - patches/**
       - files/**
       - Makefile
@@ -59,7 +60,7 @@ jobs:
       - name: Compute BuildStream cache key
         id: cache-key
         env:
-          INPUTS_HASH: ${{ hashFiles('project.conf', 'elements/**', 'include/**', 'patches/**', 'files/**', 'Makefile', 'ghostscript-printer-app.c', 'ghostscript-printer-app.1', 'ghostscript-printer-app.service', 'testpage.ps', 'VERSION') }}
+          INPUTS_HASH: ${{ hashFiles('project.conf', 'elements/**', 'include/**', 'junction-files/**', 'patches/**', 'files/**', 'Makefile', 'ghostscript-printer-app.c', 'ghostscript-printer-app.1', 'ghostscript-printer-app.service', 'testpage.ps', 'VERSION') }}
         run: echo "inputs=${CACHE_PREFIX}${INPUTS_HASH}-" >> "$GITHUB_OUTPUT"
       - name: Restore BuildStream cache
         uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
