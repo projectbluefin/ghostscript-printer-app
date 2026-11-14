@@ -30,6 +30,75 @@ driver](http://www.openprinting.org/drivers/),
 For the Bluefin OCI appliance, report [issues](https://github.com/projectbluefin/ghostscript-printer-app/issues) and propose changes to the `main` branch of [the Bluefin fork](https://github.com/projectbluefin/ghostscript-printer-app). For upstream application and Snap changes, use [OpenPrinting](https://github.com/OpenPrinting/ghostscript-printer-app).
 
 
+### Supported printers
+
+The published Ghostscript Printer Application image declares support for **8,532 printer model, family, and alias names** across 59 manufacturers.
+This is driver-declared support, not hardware-tested verification. Scanning and fax are not supported.
+
+The complete searchable directory of models and provenance details is in [**SUPPORTED-PRINTERS.md**](SUPPORTED-PRINTERS.md).
+
+#### Table of Contents by Manufacturer
+
+- [Alps](SUPPORTED-PRINTERS.md#alps)
+- [Anitech](SUPPORTED-PRINTERS.md#anitech)
+- [Apollo](SUPPORTED-PRINTERS.md#apollo)
+- [Apple](SUPPORTED-PRINTERS.md#apple)
+- [Brother](SUPPORTED-PRINTERS.md#brother)
+- [Canon](SUPPORTED-PRINTERS.md#canon)
+- [Citizen](SUPPORTED-PRINTERS.md#citizen)
+- [CItoh](SUPPORTED-PRINTERS.md#citoh)
+- [Compaq](SUPPORTED-PRINTERS.md#compaq)
+- [DEC](SUPPORTED-PRINTERS.md#dec)
+- [Dell](SUPPORTED-PRINTERS.md#dell)
+- [DYMO](SUPPORTED-PRINTERS.md#dymo)
+- [Epson](SUPPORTED-PRINTERS.md#epson)
+- [Fuji Xerox](SUPPORTED-PRINTERS.md#fuji-xerox)
+- [Fujitsu](SUPPORTED-PRINTERS.md#fujitsu)
+- [Generic](SUPPORTED-PRINTERS.md#generic)
+- [Genicom](SUPPORTED-PRINTERS.md#genicom)
+- [Gestetner](SUPPORTED-PRINTERS.md#gestetner)
+- [Heidelberg](SUPPORTED-PRINTERS.md#heidelberg)
+- [Hitachi](SUPPORTED-PRINTERS.md#hitachi)
+- [HP](SUPPORTED-PRINTERS.md#hp)
+- [IBM](SUPPORTED-PRINTERS.md#ibm)
+- [Imagen](SUPPORTED-PRINTERS.md#imagen)
+- [Imagistics](SUPPORTED-PRINTERS.md#imagistics)
+- [InfoPrint](SUPPORTED-PRINTERS.md#infoprint)
+- [Infotec](SUPPORTED-PRINTERS.md#infotec)
+- [Kodak](SUPPORTED-PRINTERS.md#kodak)
+- [Konica Minolta](SUPPORTED-PRINTERS.md#konica-minolta)
+- [Kyocera](SUPPORTED-PRINTERS.md#kyocera)
+- [Lanier](SUPPORTED-PRINTERS.md#lanier)
+- [Lenovo](SUPPORTED-PRINTERS.md#lenovo)
+- [Lexmark](SUPPORTED-PRINTERS.md#lexmark)
+- [Minolta](SUPPORTED-PRINTERS.md#minolta)
+- [Minolta QMS](SUPPORTED-PRINTERS.md#minolta-qms)
+- [Mitsubishi](SUPPORTED-PRINTERS.md#mitsubishi)
+- [NEC](SUPPORTED-PRINTERS.md#nec)
+- [NRG](SUPPORTED-PRINTERS.md#nrg)
+- [Oce](SUPPORTED-PRINTERS.md#oce)
+- [Oki](SUPPORTED-PRINTERS.md#oki)
+- [Olivetti](SUPPORTED-PRINTERS.md#olivetti)
+- [Panasonic](SUPPORTED-PRINTERS.md#panasonic)
+- [PCPI](SUPPORTED-PRINTERS.md#pcpi)
+- [QMS](SUPPORTED-PRINTERS.md#qms)
+- [Raven](SUPPORTED-PRINTERS.md#raven)
+- [Ricoh](SUPPORTED-PRINTERS.md#ricoh)
+- [Samsung](SUPPORTED-PRINTERS.md#samsung)
+- [Savin](SUPPORTED-PRINTERS.md#savin)
+- [Seiko](SUPPORTED-PRINTERS.md#seiko)
+- [Sharp](SUPPORTED-PRINTERS.md#sharp)
+- [SiPix](SUPPORTED-PRINTERS.md#sipix)
+- [Sony](SUPPORTED-PRINTERS.md#sony)
+- [Star](SUPPORTED-PRINTERS.md#star)
+- [Tally](SUPPORTED-PRINTERS.md#tally)
+- [Tektronix](SUPPORTED-PRINTERS.md#tektronix)
+- [Texas Instruments](SUPPORTED-PRINTERS.md#texas-instruments)
+- [Toshiba](SUPPORTED-PRINTERS.md#toshiba)
+- [TOSHIBA TEC Corp.](SUPPORTED-PRINTERS.md#toshiba-tec-corp)
+- [Xante](SUPPORTED-PRINTERS.md#xante)
+- [Xerox](SUPPORTED-PRINTERS.md#xerox)
+
 ### Contained Printer Drivers
 
 - **Ghostscript built-in**:
