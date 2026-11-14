@@ -119,6 +119,8 @@ jobs:
           else
             echo "printing base seeded from ${ARCH}-${KEY}"
           fi
+      - name: Fetch printing runtime layer parent
+        run: just prepare-parent
       - name: Build image
         run: just bst --config /src/ci/buildstream.conf --network-retries 5 build oci/ghostscript-printer-app.bst
       - name: Measure cache
