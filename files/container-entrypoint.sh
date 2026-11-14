@@ -146,9 +146,12 @@ export TESTPAGE_DIR=/usr/share/ghostscript-printer-app
 export TMPDIR=/tmp
 export USB_QUIRK_DIR="$state_dir"
 
+source /usr/libexec/printer-app/entrypoint-common.sh
+
 children=()
 stop_children() {
   local index pid
+  declare -F printer_app_stop_countme >/dev/null && printer_app_stop_countme
   for ((index = ${#children[@]} - 1; index >= 0; index--)); do
     pid="${children[index]}"
     kill -TERM "$pid" 2>/dev/null || true
@@ -201,6 +204,7 @@ if [[ -z "${PRINTER_APP_AUTH_SERVICE:-}" ]] && ((!web_interface_disabled)); then
 fi
 ghostscript-printer-app "${args[@]}" server &
 children+=("$!")
+declare -F printer_app_start_countme >/dev/null && printer_app_start_countme "$state_dir" ghostscript-printer-app
 
 if wait -n "${children[@]}"; then
   status=1

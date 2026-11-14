@@ -450,6 +450,16 @@ state cannot be secured by UID/GID `65532:65532` fails startup. Keep bind-mounte
 state owned by that runtime user (the `:U` option above sets volume ownership),
 and restrict access to its host parent directory.
 
+The shared, noncritical countme reporter sends an anonymous HTTPS `PUT` to
+`https://countme.projectbluefin.io/v1/ping` with only
+`{"image":"ghostscript-printer-app/main:unknown"}`. This measures an active
+reporting app installation per UTC calendar day, not unique hosts, physical
+printers, or print jobs. A successful report records the UTC day in the state
+volume so a restart that day does not report again. Keep the same state when
+disabling and re-enabling an instance in ChairLift. The stream is `unknown`
+because an image digest does not identify its release tag; reporting failure
+does not stop printing.
+
 ### Web administration
 
 PAPPL serves IPP and the web interface on the same port, and the appliance runs
