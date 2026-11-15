@@ -54,6 +54,8 @@ bst *ARGS:
 validate:
     just verify-rootless-usb
     just verify-entrypoint-validation
+    tests/fsdk-pin.sh
+    tests/source-pins.sh
     tests/seed-printing-base.sh
     tests/oci-archive-digest.sh
     python3 tests/snap-parity-matrix.py
