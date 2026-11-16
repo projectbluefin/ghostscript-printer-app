@@ -1,0 +1,45 @@
+# Issue intake: the issue forms apply needs-human (the Hive agent opt-out) to every new report.
+# Keep it only when the reporter chose "Human interaction only"; remove it for the other
+# answers. Runs on opened only, so a maintainer who re-adds needs-human later is not overridden.
+# Security baseline: permissions: {} at the top, write scopes granted per job; the issue body
+# reaches the script through env:, never through an expression inside run:.
+name: Issue intake opt-in
+on:
+  issues:
+    types: [opened]
+
+permissions: {}
+
+jobs:
+  opt-in:
+    if: contains(github.event.issue.labels.*.name, 'needs-human')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      issues: write
+    steps:
+      - name: Remove needs-human unless the reporter asked for a person only
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BODY: ${{ github.event.issue.body }}
+          NUMBER: ${{ github.event.issue.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          # Print the first non-empty line after the "### Automation preference" heading.
+          automation_preference() {
+            printf '%s\n' "$1" | tr -d '\r' | awk '
+              found && NF { sub(/^[ \t]+/, ""); sub(/[ \t]+$/, ""); print; exit }
+              /^### Automation preference[ \t]*$/ { found = 1 }
+            '
+          }
+
+          answer="$(automation_preference "$BODY")"
+          case "$answer" in
+            "Machine analysis is welcome" | "No preference")
+              gh issue edit "$NUMBER" -R "$REPO" --remove-label needs-human
+              echo "Removed needs-human from #$NUMBER: reporter chose \"$answer\"."
+              ;;
+            *)
+              echo "Kept needs-human on #$NUMBER: automation preference is \"${answer:-missing}\"."
+              ;;
+          esac
