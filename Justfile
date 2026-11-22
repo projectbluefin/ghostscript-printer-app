@@ -62,6 +62,7 @@ validate:
     python3 tests/test_snap_parity_matrix.py
     PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
     python3 tests/test_python_install_pins.py
+    python3 tests/test_bst_cache_restore.py
     just bst show --deps all oci/ghostscript-printer-app.bst
 
 # Never fails: falls back to building the base locally (see ci/seed-printing-base.sh).
