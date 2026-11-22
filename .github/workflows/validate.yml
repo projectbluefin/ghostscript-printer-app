@@ -36,6 +36,12 @@ jobs:
         shell: bash
         run: python3 tests/test_python_install_pins.py
 
+      - name: Check BuildStream cache refill restore keys
+        # Regression for reusing an older same-architecture cache when the
+        # current-input cache is missing (ghostscript-printer-app#256).
+        shell: bash
+        run: python3 tests/test_bst_cache_restore.py
+
       - name: Cache pre-commit hooks
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
