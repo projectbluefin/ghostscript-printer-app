@@ -278,11 +278,30 @@ sbom:
                 echo "buildstream-sbom installation failed after 3 attempts" >&2
                 exit 1
             fi
-            buildstream-sbom oci/ghostscript-printer-app.bst \
-                --spdx-name ghostscript-printer-app \
-                --spdx-namespace "https://github.com/projectbluefin/ghostscript-printer-app/sbom/${GIT_SHA}" \
-                --spdx-creator "Tool: buildstream-sbom" \
-                --spdx-creator "Organization: projectbluefin" \
-                --deps all \
-                --output /src/ghostscript-printer-app.spdx.json
+            # Loading the project fetches the junctions (fsdk-containers and,
+            # through it, gnome-build-meta from gitlab.gnome.org). The git
+            # plugin reports an upstream 503 as a permanent error, so bst
+            # network-retries never retries it (issue #223). Retry the whole
+            # run with backoff; junctions already fetched stay in the mounted
+            # cache, so a retry resumes where the last attempt stopped.
+            generated=0
+            for attempt in 1 2 3; do
+                if buildstream-sbom oci/ghostscript-printer-app.bst \
+                    --spdx-name ghostscript-printer-app \
+                    --spdx-namespace "https://github.com/projectbluefin/ghostscript-printer-app/sbom/${GIT_SHA}" \
+                    --spdx-creator "Tool: buildstream-sbom" \
+                    --spdx-creator "Organization: projectbluefin" \
+                    --deps all \
+                    --output /src/ghostscript-printer-app.spdx.json; then
+                    generated=1
+                    break
+                fi
+                echo "buildstream-sbom failed (attempt ${attempt}/3)" >&2
+                if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 30)); fi
+            done
+            if [[ "$generated" != 1 ]]; then
+                rm -f /src/ghostscript-printer-app.spdx.json
+                echo "SBOM generation failed after 3 attempts" >&2
+                exit 1
+            fi
         '
