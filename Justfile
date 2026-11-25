@@ -63,7 +63,23 @@ validate:
     PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
     python3 tests/test_python_install_pins.py
     python3 tests/test_bst_cache_restore.py
-    just bst show --deps all oci/ghostscript-printer-app.bst
+    just show-graph
+
+# Loading the graph fetches the junctions (fsdk-containers and, through it,
+# gnome-build-meta from gitlab.gnome.org). The git plugin reports an upstream
+# 503 as a permanent error, so bst network-retries never retries it (issue
+# #223). Retry with backoff; junctions already fetched stay in the cache.
+show-graph:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for attempt in 1 2 3; do
+        if just bst show --deps all oci/ghostscript-printer-app.bst; then
+            exit 0
+        fi
+        echo "bst show failed (attempt ${attempt}/3)" >&2
+        if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 30)); fi
+    done
+    exit 1
 
 # Never fails: falls back to building the base locally (see ci/seed-printing-base.sh).
 # Seed the BuildStream cache with the cosign-verified printing base for ARCH.
