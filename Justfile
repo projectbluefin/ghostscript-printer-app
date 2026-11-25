@@ -66,9 +66,10 @@ validate:
     just show-graph
 
 # Loading the graph fetches the junctions (fsdk-containers and, through it,
-# gnome-build-meta from gitlab.gnome.org). The git plugin reports an upstream
-# 503 as a permanent error, so bst network-retries never retries it (issue
-# #223). Retry with backoff; junctions already fetched stay in the cache.
+# gnome-build-meta from gitlab.gnome.org). CI's BST_FLAGS config mirrors that
+# junction from GitHub (ci/buildstream.conf). The git plugin reports an
+# upstream 503 as a permanent error, so bst network-retries never retries it
+# (issue #223). Retry with backoff; junctions already fetched stay in the cache.
 show-graph:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -276,6 +277,7 @@ sbom:
         -v "{{ justfile_directory() }}:/src:rw" \
         -v "${HOME}/.cache/buildstream:/root/.cache/buildstream:rw" \
         -v "${HOME}/.cache/pip:/root/.cache/pip:rw" \
+        -v "{{ justfile_directory() }}/ci/buildstream.conf:/root/.config/buildstream.conf:ro" \
         -w /src \
         -e GIT_SHA="$git_sha" \
         "{{ bst2_image }}" \
@@ -295,11 +297,14 @@ sbom:
                 exit 1
             fi
             # Loading the project fetches the junctions (fsdk-containers and,
-            # through it, gnome-build-meta from gitlab.gnome.org). The git
-            # plugin reports an upstream 503 as a permanent error, so bst
-            # network-retries never retries it (issue #223). Retry the whole
-            # run with backoff; junctions already fetched stay in the mounted
-            # cache, so a retry resumes where the last attempt stopped.
+            # through it, gnome-build-meta from gitlab.gnome.org).
+            # buildstream-sbom runs bst with no --config, so the CI config,
+            # which mirrors that junction from GitHub, is mounted as the
+            # default user config. The git plugin reports an upstream 503 as
+            # a permanent error, so bst network-retries never retries it
+            # (issue #223). Retry the whole run with backoff; junctions
+            # already fetched stay in the mounted cache, so a retry resumes
+            # where the last attempt stopped.
             generated=0
             for attempt in 1 2 3; do
                 if buildstream-sbom oci/ghostscript-printer-app.bst \
