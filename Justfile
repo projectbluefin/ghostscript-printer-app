@@ -63,7 +63,24 @@ validate:
     PYTHONDONTWRITEBYTECODE=1 python3 tests/renovate.py
     python3 tests/test_python_install_pins.py
     python3 tests/test_bst_cache_restore.py
-    just bst show --deps all oci/ghostscript-printer-app.bst
+    just show-graph
+
+# Loading the graph fetches the junctions (fsdk-containers and, through it,
+# gnome-build-meta from gitlab.gnome.org). CI's BST_FLAGS config mirrors that
+# junction from GitHub (ci/buildstream.conf). The git plugin reports an
+# upstream 503 as a permanent error, so bst network-retries never retries it
+# (issue #223). Retry with backoff; junctions already fetched stay in the cache.
+show-graph:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    for attempt in 1 2 3; do
+        if just bst show --deps all oci/ghostscript-printer-app.bst; then
+            exit 0
+        fi
+        echo "bst show failed (attempt ${attempt}/3)" >&2
+        if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 30)); fi
+    done
+    exit 1
 
 # Never fails: falls back to building the base locally (see ci/seed-printing-base.sh).
 # Seed the BuildStream cache with the cosign-verified printing base for ARCH.
@@ -260,6 +277,7 @@ sbom:
         -v "{{ justfile_directory() }}:/src:rw" \
         -v "${HOME}/.cache/buildstream:/root/.cache/buildstream:rw" \
         -v "${HOME}/.cache/pip:/root/.cache/pip:rw" \
+        -v "{{ justfile_directory() }}/ci/buildstream.conf:/root/.config/buildstream.conf:ro" \
         -w /src \
         -e GIT_SHA="$git_sha" \
         "{{ bst2_image }}" \
@@ -278,11 +296,33 @@ sbom:
                 echo "buildstream-sbom installation failed after 3 attempts" >&2
                 exit 1
             fi
-            buildstream-sbom oci/ghostscript-printer-app.bst \
-                --spdx-name ghostscript-printer-app \
-                --spdx-namespace "https://github.com/projectbluefin/ghostscript-printer-app/sbom/${GIT_SHA}" \
-                --spdx-creator "Tool: buildstream-sbom" \
-                --spdx-creator "Organization: projectbluefin" \
-                --deps all \
-                --output /src/ghostscript-printer-app.spdx.json
+            # Loading the project fetches the junctions (fsdk-containers and,
+            # through it, gnome-build-meta from gitlab.gnome.org).
+            # buildstream-sbom runs bst with no --config, so the CI config,
+            # which mirrors that junction from GitHub, is mounted as the
+            # default user config. The git plugin reports an upstream 503 as
+            # a permanent error, so bst network-retries never retries it
+            # (issue #223). Retry the whole run with backoff; junctions
+            # already fetched stay in the mounted cache, so a retry resumes
+            # where the last attempt stopped.
+            generated=0
+            for attempt in 1 2 3; do
+                if buildstream-sbom oci/ghostscript-printer-app.bst \
+                    --spdx-name ghostscript-printer-app \
+                    --spdx-namespace "https://github.com/projectbluefin/ghostscript-printer-app/sbom/${GIT_SHA}" \
+                    --spdx-creator "Tool: buildstream-sbom" \
+                    --spdx-creator "Organization: projectbluefin" \
+                    --deps all \
+                    --output /src/ghostscript-printer-app.spdx.json; then
+                    generated=1
+                    break
+                fi
+                echo "buildstream-sbom failed (attempt ${attempt}/3)" >&2
+                if [[ "$attempt" -lt 3 ]]; then sleep $((attempt * 30)); fi
+            done
+            if [[ "$generated" != 1 ]]; then
+                rm -f /src/ghostscript-printer-app.spdx.json
+                echo "SBOM generation failed after 3 attempts" >&2
+                exit 1
+            fi
         '
