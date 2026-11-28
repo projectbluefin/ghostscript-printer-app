@@ -7,10 +7,10 @@ if [[ -n "${PORT:-}" && ! "$PORT" =~ ^[0-9]+$ ]]; then
 fi
 
 # Web administration knobs (ChairLift ADR-0016). PAPPL serves IPP and the web
-# interface on one listener, so on host networking the only boundary around the
-# admin pages is authorization. Every value is validated here and the container
-# exits non-zero rather than start with a setting the server would silently
-# ignore or weaken: pappl-retrofit drops unknown server-options without a
+# interface on one listener, but restricts administration pages to loopback.
+# Every value is validated here and the container exits non-zero rather than
+# start with a setting the server would silently ignore or weaken:
+# pappl-retrofit drops unknown server-options without a
 # diagnostic, and PAPPL skips the group check for an admin-group it cannot
 # resolve. Exit 64 marks a malformed value; exit 78 marks a value this image
 # cannot honour.
@@ -200,7 +200,7 @@ for option in "${server_options[@]}"; do
   [[ "$option" == no-web-interface ]] && web_interface_disabled=1
 done
 if [[ -z "${PRINTER_APP_AUTH_SERVICE:-}" ]] && ((!web_interface_disabled)); then
-  printf 'NOTICE: web administration is reachable by every client that can reach the IPP port; set PRINTER_APP_SERVER_OPTIONS=no-web-interface to disable it\n' >&2
+  printf 'NOTICE: web administration is available only on host loopback; set PRINTER_APP_SERVER_OPTIONS=no-web-interface to disable it\n' >&2
 fi
 ghostscript-printer-app "${args[@]}" server &
 children+=("$!")
