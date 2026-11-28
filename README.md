@@ -462,13 +462,15 @@ does not stop printing.
 
 ### Web administration
 
-PAPPL serves IPP and the web interface on the same port, and the appliance runs
-on host networking, so by default the web administration pages are reachable by
-every client that can reach the printer, without a credential. The entrypoint
-prints a `NOTICE` about this at startup. Close that surface with one of these
-environment variables; every value is validated, and a value the appliance
-cannot honour stops the container instead of starting it unauthenticated
-(exit `64` for a malformed value, `78` for a value this image cannot enforce):
+PAPPL serves IPP and the web interface on the same port. IPP printing and
+DNS-SD discovery are available to the network, but the image's PAPPL 1.4
+allows access to administration and log pages only from loopback on the host;
+requests from other machines receive `403 Forbidden`. Local administration
+does not require a credential. The entrypoint prints a `NOTICE` at startup.
+To turn off the web pages entirely, use the environment variable below. Values
+are validated, and a value the appliance cannot honour stops the container
+instead of starting it with a weaker configuration (exit `64` for a malformed
+value, `78` for a value this image cannot enforce):
 
 | Variable | Forwarded as | Accepted values |
 | --- | --- | --- |
@@ -476,8 +478,8 @@ cannot honour stops the container instead of starting it unauthenticated
 | `PRINTER_APP_AUTH_SERVICE` | `-o auth-service=…` | A PAM service name (`[A-Za-z0-9_.-]`). Refused with exit `78` while the image's PAPPL is built without PAM (see below). |
 | `PRINTER_APP_ADMIN_GROUP` | `-o admin-group=…` | A group from the image's `/etc/group`; requires `PRINTER_APP_AUTH_SERVICE`. |
 
-`PRINTER_APP_SERVER_OPTIONS=no-web-interface` is the supported way to run the
-appliance on a LAN-facing surface today: every web page, including the
+`PRINTER_APP_SERVER_OPTIONS=no-web-interface` disables the web interface:
+every web page, including the
 per-printer configuration, pappl-retrofit's "Device Settings" pages and the
 log views (`/logs`, `/logfile.txt`), answers `404`, while IPP printing, IPP
 administration from the container itself, and DNS-SD advertisement keep

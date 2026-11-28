@@ -188,10 +188,10 @@ if [[ "$(cat "$case_dir/args")" == "$expected" ]]; then
 else
   fail "defaults: ghostscript-printer-app got: $(paste -sd' ' "$case_dir/args")"
 fi
-if grep -q '^NOTICE: web administration is reachable' "$case_dir/stderr"; then
-  pass 'open web administration prints the NOTICE'
+if grep -Fxq 'NOTICE: web administration is available only on host loopback; set PRINTER_APP_SERVER_OPTIONS=no-web-interface to disable it' "$case_dir/stderr"; then
+  pass 'local web administration prints the NOTICE'
 else
-  fail "open web administration did not print the NOTICE: $(cat "$case_dir/stderr")"
+  fail "local web administration did not print the expected NOTICE: $(cat "$case_dir/stderr")"
 fi
 
 new_case

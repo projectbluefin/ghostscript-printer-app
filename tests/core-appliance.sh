@@ -196,9 +196,8 @@ podman run -d \
 wait_for_http "$port"
 wait_for_https "$port"
 check_private_state "$name"
-# Without a credential or no-web-interface the web admin is LAN-reachable on
-# host networking; the entrypoint must say so.
-assert_container_log "$name" 'NOTICE: web administration is reachable'
+# Web administration is restricted to loopback; the entrypoint must say so.
+assert_container_log "$name" 'NOTICE: web administration is available only on host loopback'
 podman exec "$name" /usr/bin/bash -c '
   set -e
   test "$(id -u):$(id -g)" = 65532:65532
@@ -373,7 +372,7 @@ if [[ "$ready" -ne 1 ]]; then
   printf 'FAIL: listener did not answer (with 404) after starting with no-web-interface\n' >&2
   exit 1
 fi
-assert_container_log_absent "$no_web_name" 'NOTICE: web administration is reachable'
+assert_container_log_absent "$no_web_name" 'NOTICE: web administration is available only on host loopback'
 podman exec "$no_web_name" ghostscript-printer-app \
   -u "$no_web_system_uri" \
   -d no-web-test \
